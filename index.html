@@ -761,9 +761,46 @@ function toast(msg) {
 async function init() {
   showScreen('loading');
 
-  // Listen for auth state changes
+  // Safety net — if nothing resolves in 6 seconds, go to login
+  const loadingTimeout = setTimeout(() => {
+    console.warn('Auth timeout — falling back to login screen');
+    showScreen('auth');
+  }, 6000);
+
+  try {
+    // Get existing session directly — most reliable on desktop Chrome
+    const { data: { session }, error } = await supa.auth.getSession();
+
+    if (error || !session) {
+      clearTimeout(loadingTimeout);
+      showScreen('auth');
+      return;
+    }
+
+    // Valid session found — load and go
+    currentUser = session.user;
+    document.getElementById('user-btn').textContent =
+      '👤 ' + (currentUser.email.split('@')[0]);
+    await loadCollection(currentUser.id);
+    clearTimeout(loadingTimeout);
+    render();
+    showScreen('app');
+
+  } catch(e) {
+    console.error('Init error:', e);
+    clearTimeout(loadingTimeout);
+    showScreen('auth');
+  }
+
+  // Listen for subsequent auth changes (login, logout, token refresh)
   supa.auth.onAuthStateChange(async (event, session) => {
-    if (session?.user) {
+    if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      collection = {};
+      showScreen('auth');
+      return;
+    }
+    if (event === 'SIGNED_IN' && session?.user) {
       currentUser = session.user;
       document.getElementById('user-btn').textContent =
         '👤 ' + (currentUser.email.split('@')[0]);
@@ -771,18 +808,18 @@ async function init() {
       await loadCollection(currentUser.id);
       render();
       showScreen('app');
-    } else {
-      currentUser = null;
-      showScreen('auth');
+    }
+    // TOKEN_REFRESHED — silently update user, no screen change needed
+    if (event === 'TOKEN_REFRESHED' && session?.user) {
+      currentUser = session.user;
     }
   });
-
-  // Check existing session
-  const { data: { session } } = await supa.auth.getSession();
-  if (!session) showScreen('auth');
 }
 
-init().catch(console.error);
+init().catch(e => {
+  console.error('Fatal init error:', e);
+  showScreen('auth');
+});
 </script>
 </body>
 </html>
