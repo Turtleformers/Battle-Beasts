@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d0d1a">
+<title>Battle Beasts Checklist</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500;600&display=swap');
+
+:root {
+  --bg:       #0d0d1a;
+  --surface:  #141428;
+  --card:     #1a1a35;
+  --card-own: #1a0f38;
+  --border:   #2a2a50;
+  --accent:   #e63060;
+  --gold:     #f0b429;
+  --fg:       #e8e8f0;
+  --dim:      #6666aa;
+  --mid:      #9999cc;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--fg);
+  font-family: 'Barlow', sans-serif; overscroll-behavior: none; }
+
+/* ── AUTH SCREEN ── */
+#auth-screen {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.auth-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 28px;
+  width: 100%; max-width: 380px;
+}
+.auth-logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900; font-size: 28px; color: var(--accent);
+  text-align: center; letter-spacing: 2px;
+  text-transform: uppercase; margin-bottom: 6px;
+}
+.auth-sub {
+  text-align: center; color: var(--dim); font-size: 13px;
+  margin-bottom: 28px;
+}
+.auth-tabs {
+  display: flex; gap: 0; margin-bottom: 24px;
+  border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+}
+.auth-tab {
+  flex: 1; padding: 9px; text-align: center; cursor: pointer;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700; font-size: 14px; letter-spacing: .5px;
+  color: var(--dim); background: transparent; border: none;
+  transition: all .15s;
+}
+.auth-tab.on { background: var(--accent); color: #fff; }
+.auth-field {
+  margin-bottom: 14px;
+}
+.auth-field label {
+  display: block; font-size: 12px; color: var(--mid);
+  margin-bottom: 5px; font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+}
+.auth-field input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 12px; color: var(--fg);
+  font-family: 'Barlow', sans-serif; font-size: 14px; outline: none;
+}
+.auth-field input:focus { border-color: var(--accent); }
+.auth-submit {
+  width: 100%; background: var(--accent); color: #fff; border: none;
+  border-radius: 8px; padding: 12px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900; font-size: 16px; letter-spacing: 1px;
+  cursor: pointer; transition: background .15s; margin-top: 4px;
+}
+.auth-submit:hover { background: #c02050; }
+.auth-submit:disabled { background: var(--border); cursor: default; }
+.auth-msg {
+  text-align: center; font-size: 13px; margin-top: 14px;
+  min-height: 18px; color: var(--gold);
+}
+.auth-msg.err { color: var(--accent); }
+
+/* ── APP ── */
+#app-screen { display: none; flex-direction: column; min-height: 100vh; }
+
+/* ── TOOLBAR ── */
+.toolbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,22,0.97);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  padding: 9px 12px 7px;
+}
+.tb-row1 { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900; font-size: 18px; color: var(--accent);
+  letter-spacing: 1px; white-space: nowrap; text-transform: uppercase; flex-shrink: 0;
+}
+.search {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 7px; padding: 6px 11px; color: var(--fg);
+  font-family: 'Barlow', sans-serif; font-size: 14px; outline: none; min-width: 0;
+}
+.search:focus { border-color: var(--accent); }
+.search::placeholder { color: var(--dim); }
+.user-btn {
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--mid); font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700; font-size: 11px; padding: 5px 9px;
+  border-radius: 6px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
+.tb-row2 { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.fbtn {
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--mid); font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700; font-size: 12px; letter-spacing: .5px;
+  padding: 4px 11px; border-radius: 6px; cursor: pointer; transition: all .15s;
+}
+.fbtn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.stats { font-size: 11px; color: var(--dim); margin-left: 2px; }
+.stats b { color: var(--gold); }
+.tbtn {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--dim); font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700; font-size: 11px; letter-spacing: .5px;
+  padding: 4px 9px; border-radius: 6px; cursor: pointer; transition: all .15s;
+}
+.tbtn.hi { border-color: var(--accent); color: var(--accent); }
+.tb-right { margin-left: auto; display: flex; gap: 5px; }
+.sync-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--gold); display: inline-block;
+  margin-right: 4px; opacity: 0; transition: opacity .3s;
+}
+.sync-dot.active { opacity: 1; }
+
+/* ── GRID ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px; padding: 10px 8px 80px;
+}
+@media (min-width: 480px) { .grid { grid-template-columns: repeat(4,1fr); } }
+@media (min-width: 640px) { .grid { grid-template-columns: repeat(5,1fr); } }
+@media (min-width: 900px) { .grid { grid-template-columns: repeat(7,1fr); gap: 10px; } }
+
+/* ── CARD ── */
+.card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 10px; display: flex; flex-direction: column;
+  align-items: stretch; padding: 6px 6px 8px;
+  transition: box-shadow .2s, border-color .2s, background .2s;
+}
+.card.owned {
+  background: var(--card-own); border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 4px 18px rgba(230,48,96,.25);
+}
+.card-img-wrap {
+  width: 100%; aspect-ratio: 1;
+  background: var(--surface); border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.card-img-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.card-ph {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px; font-weight: 900; color: var(--border);
+}
+.card-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900; font-size: 12px; color: var(--accent);
+  text-align: center; line-height: 1.2;
+  padding: 5px 2px 5px; word-break: break-word;
+}
+.star-row {
+  display: flex; align-items: center;
+  gap: 4px; padding: 0 2px 4px;
+}
+.star-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700; font-size: 11px; color: #7fff50;
+  width: 44px; flex-shrink: 0;
+}
+.stars { display: flex; gap: 2px; }
+.star { width: 16px; height: 16px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; flex-shrink: 0; }
+.star svg { width: 100%; height: 100%; display: block; }
+.elem-row {
+  display: flex; align-items: center; justify-content: space-around;
+  padding: 4px 2px 2px; gap: 3px;
+  border-top: 1px solid var(--border); margin-top: 2px;
+}
+.elem-btn {
+  width: 30%; aspect-ratio: 3/2; border-radius: 5px; overflow: hidden;
+  cursor: pointer; border: 2px solid transparent;
+  transition: border-color .15s, opacity .15s;
+  opacity: 0.45; background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.elem-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.elem-btn.sel { opacity: 1; border-color: var(--gold); }
+.elem-ph { font-size: 10px; color: var(--dim);
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700; }
+.empty { grid-column:1/-1; text-align:center; padding:60px 20px;
+  color:var(--dim); font-family:'Barlow Condensed',sans-serif; font-size:20px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(70px);
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--fg); font-size: 13px; padding: 9px 18px;
+  border-radius: 20px; transition: transform .3s; z-index: 999;
+  white-space: nowrap; pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+#csv-file { display: none; }
+
+/* ── LOADING ── */
+#loading-screen {
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 16px;
+}
+.spinner {
+  width: 36px; height: 36px; border: 3px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div style="color:var(--dim);font-family:'Barlow Condensed',sans-serif;font-size:16px;letter-spacing:1px;">
+    LOADING…
+  </div>
+</div>
+
+<!-- Auth -->
+<div id="auth-screen" style="display:none;">
+  <div class="auth-box">
+    <div class="auth-logo">⚔ Battle Beasts</div>
+    <div class="auth-sub">Collector Checklist</div>
+    <div class="auth-tabs">
+      <button class="auth-tab on" id="tab-login" onclick="switchTab('login')">Login</button>
+      <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+    <div class="auth-field">
+      <label>Email</label>
+      <input type="email" id="auth-email" placeholder="your@email.com" autocomplete="email">
+    </div>
+    <div class="auth-field">
+      <label>Password</label>
+      <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="auth-submit" id="auth-btn" onclick="doAuth()">Login</button>
+    <div class="auth-msg" id="auth-msg"></div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app-screen">
+  <div class="toolbar">
+    <div class="tb-row1">
+      <div class="logo">⚔ Battle Beasts</div>
+      <input class="search" id="search" type="search" placeholder="Search…" autocomplete="off">
+      <button class="user-btn" id="user-btn" onclick="doLogout()">Sign Out</button>
+    </div>
+    <div class="tb-row2">
+      <button class="fbtn on" data-f="all">All</button>
+      <button class="fbtn" data-f="owned">Owned</button>
+      <button class="fbtn" data-f="unowned">Unowned</button>
+      <span class="stats" id="stats"></span>
+      <div class="tb-right">
+        <span class="sync-dot" id="sync-dot"></span>
+        <button class="tbtn" id="btn-export">Export</button>
+        <button class="tbtn" id="btn-import">Import</button>
+        <input type="file" id="csv-file" accept=".csv">
+      </div>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Supabase init ──────────────────────────────────────────────────────────
+const SUPA_URL = 'https://wqbemqdbajmypfkymgxo.supabase.co';
+const SUPA_KEY = 'sb_publishable_Le_B7RtxevZaBiTkBoX23w_zAyKPBxU';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ── Image base URL (GitHub raw) ────────────────────────────────────────────
+const IMG_BASE = 'https://raw.githubusercontent.com/Turtleformers/Battle-Beasts/main/images/';
+
+function imgSrc(key) {
+  // key is a number (1-76) or 'F','W','T'
+  if (typeof key === 'number') {
+    // Try lowercase first, GitHub is case-sensitive
+    return IMG_BASE + key + '.jpg';
+  }
+  return IMG_BASE + key.toUpperCase() + '.JPG';
+}
+
+// ── Beast data ─────────────────────────────────────────────────────────────
+const BEASTS = [
+  [1,"Pirate Lion","Series 1"],[2,"Deer Stalker","Series 1"],
+  [3,"Ferocious Tiger","Series 1"],[4,"Colonel Bird","Series 1"],
+  [5,"Killer Carp","Series 1"],[6,"Triple Threat Snake","Series 1"],
+  [7,"Horny Toad","Series 1"],[8,"Sledgehammer Elephant","Series 1"],
+  [9,"Rocky Rhino","Series 1"],[10,"Roamin' Buffalo","Series 1"],
+  [11,"Grizzly Bear","Series 1"],[12,"Blitzkrieg Bat","Series 1"],
+  [13,"Gargantuan Gorilla","Series 1"],[14,"Swiny Boar","Series 1"],
+  [15,"Gruesome Gator","Series 1"],[16,"Sly Fox","Series 1"],
+  [17,"Hardtop Tortoise","Series 1"],[18,"Rubberneck Giraffe","Series 1"],
+  [19,"Prickly Porcupine","Series 1"],[20,"Sawtooth Shark","Series 1"],
+  [21,"Danger Dog","Series 1"],[22,"Hare Razing Rabbit","Series 1"],
+  [23,"Sir Sire Horse","Series 1"],[24,"War Weasel","Series 1"],
+  [25,"Bloodthirsty Bison","Series 1"],[26,"Bighorn Sheep","Series 1"],
+  [27,"Webslinger Spider","Series 1"],[28,"Crusty Crab","Series 1"],
+  [29,"Icky Iguana","Series 2"],[30,"Armored Armadillo","Series 2"],
+  [31,"Jaded Jag","Series 2"],[32,"Humongous Hippo","Series 2"],
+  [33,"Major Moose","Series 2"],[34,"Delta Chameleon","Series 2"],
+  [35,"Kickback Kangaroo","Series 2"],[36,"Octillion Octopus","Series 2"],
+  [37,"Wolfgang Walrus","Series 2"],[38,"Powerhouse Mouse","Series 2"],
+  [39,"Dragoon Raccoon","Series 2"],[40,"Antic Anteater","Series 2"],
+  [41,"Run Amuck Duck","Series 2"],[42,"Miner Mole","Series 2"],
+  [43,"Cutthroat Cuttlefish","Series 2"],[44,"Eager Beaver","Series 2"],
+  [45,"Slasher Seahorse","Series 2"],[46,"Knight Owl","Series 2"],
+  [47,"Hunchback Camel","Series 2"],[48,"Pillaging Polar Bear","Series 2"],
+  [49,"Squire Squirrel","Series 2"],[50,"Saber Sword Tiger","Series 2"],
+  [51,"Bludgeoning Bulldog","Series 2"],[52,"Pew-Trid Skunk","Series 2"],
+  [53,"Panzer Panda","Series 3"],[54,"Leapin' Lizard","Series 3"],
+  [55,"Killer Koala","Series 3"],[56,"Tarsier Tyrant","Series 3"],
+  [57,"Black Panther","Series 3"],[58,"Torrential Tapir","Series 3"],
+  [59,"King Cobra","Series 3"],[60,"Manic Mandrill","Series 3"],
+  [61,"Pixilated Pointer","Series 3"],[62,"Pillager Pig","Series 3"],
+  [63,"Rowdy Rooster","Series 3"],[64,"Musky Ox","Series 3"],
+  [65,"Tanglin Pangolin","Series 3"],[66,"Slowpoke Sloth","Series 3"],
+  [67,"Ardent Aardvark","Series 3"],[68,"Bodacious Bovine","Series 3"],
+  [69,"Zealot Zebra","Series 3"],[70,"Harrier Hawk","Series 3"],
+  [71,"Diving Duckbill","Series 3"],[72,"Crooked Crow","Series 3"],
+  [73,"Frenzied Flamingo","Series 3"],[74,"Fleet-Footed Antelope","Series 3"],
+  [75,"Pugnacious Penguin","Series 3"],[76,"Ossified Orangutan","Series 3"],
+];
+
+const ELEMS = ['F','W','T'];
+const ELEM_LABELS = { F:'Fire', W:'Water', T:'Timber' };
+
+// ── State ──────────────────────────────────────────────────────────────────
+let collection = {};   // num -> { figure, weapon, element }
+let currentUser = null;
+let saveQueue = {};
+let saveTimer = null;
+
+function getC(num) {
+  return collection[num] || { figure: 0, weapon: 0, element: null };
+}
+
+function setC(num, updates) {
+  if (!collection[num]) collection[num] = { figure: 0, weapon: 0, element: null };
+  Object.assign(collection[num], updates);
+  queueSave(num);
+}
+
+// ── Debounced cloud save ───────────────────────────────────────────────────
+function queueSave(num) {
+  saveQueue[num] = true;
+  showSync(true);
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(flushSave, 800);
+}
+
+async function flushSave() {
+  if (!currentUser) return;
+  const nums = Object.keys(saveQueue).map(Number);
+  saveQueue = {};
+  const rows = nums.map(num => ({
+    user_id: currentUser.id,
+    num,
+    figure:  collection[num]?.figure  || 0,
+    weapon:  collection[num]?.weapon  || 0,
+    element: collection[num]?.element || null,
+  }));
+  const { error } = await supa.from('collections').upsert(rows, { onConflict: 'user_id,num' });
+  if (error) console.error('Save error:', error);
+  showSync(false);
+}
+
+function showSync(on) {
+  document.getElementById('sync-dot').classList.toggle('active', on);
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+let authMode = 'login';
+
+function switchTab(mode) {
+  authMode = mode;
+  document.getElementById('tab-login').classList.toggle('on', mode === 'login');
+  document.getElementById('tab-signup').classList.toggle('on', mode === 'signup');
+  document.getElementById('auth-btn').textContent = mode === 'login' ? 'Login' : 'Create Account';
+  document.getElementById('auth-msg').textContent = '';
+  document.getElementById('auth-msg').className = 'auth-msg';
+}
+
+async function doAuth() {
+  const email    = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const btn      = document.getElementById('auth-btn');
+  const msg      = document.getElementById('auth-msg');
+
+  if (!email || !password) {
+    setMsg('Please enter email and password.', true); return;
+  }
+  btn.disabled = true;
+  btn.textContent = '…';
+  msg.textContent = '';
+
+  let error;
+  if (authMode === 'login') {
+    ({ error } = await supa.auth.signInWithPassword({ email, password }));
+  } else {
+    ({ error } = await supa.auth.signUp({ email, password }));
+    if (!error) {
+      setMsg('Account created! Check your email to confirm, then log in.', false);
+      switchTab('login');
+      btn.disabled = false;
+      btn.textContent = 'Login';
+      return;
+    }
+  }
+  if (error) {
+    setMsg(error.message, true);
+    btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'Login' : 'Create Account';
+  }
+}
+
+function setMsg(text, isErr) {
+  const el = document.getElementById('auth-msg');
+  el.textContent = text;
+  el.className = 'auth-msg' + (isErr ? ' err' : '');
+}
+
+async function doLogout() {
+  await supa.auth.signOut();
+  collection = {};
+  currentUser = null;
+  showScreen('auth');
+}
+
+// Allow Enter key on auth fields
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('auth-screen').style.display !== 'none') {
+    doAuth();
+  }
+});
+
+// ── Load user collection from Supabase ────────────────────────────────────
+async function loadCollection(userId) {
+  const { data, error } = await supa
+    .from('collections')
+    .select('num,figure,weapon,element')
+    .eq('user_id', userId);
+  if (error) { console.error(error); return; }
+  collection = {};
+  for (const row of (data || [])) {
+    collection[row.num] = {
+      figure:  row.figure  || 0,
+      weapon:  row.weapon  || 0,
+      element: row.element || null,
+    };
+  }
+}
+
+// ── Screen switcher ────────────────────────────────────────────────────────
+function showScreen(which) {
+  document.getElementById('loading-screen').style.display = which === 'loading' ? 'flex'   : 'none';
+  document.getElementById('auth-screen').style.display    = which === 'auth'    ? 'flex'   : 'none';
+  document.getElementById('app-screen').style.display     = which === 'app'     ? 'flex'   : 'none';
+  if (which === 'app') document.getElementById('app-screen').style.flexDirection = 'column';
+}
+
+// ── Star SVG ───────────────────────────────────────────────────────────────
+function starSVG(filled) {
+  const fill   = filled ? '#f0b429' : 'none';
+  const stroke = filled ? '#f0b429' : '#4a4a80';
+  return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
+      fill="${fill}" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function makeStars(currentVal, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'stars';
+  const starEls = [];
+  let lastTap = null;
+
+  function update(val) {
+    starEls.forEach((s, i) => s.innerHTML = starSVG(i < val));
+  }
+
+  for (let i = 1; i <= 3; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.innerHTML = starSVG(i <= currentVal);
+    starEls.push(s);
+    const idx = i;
+    s.addEventListener('click', () => {
+      const newVal = lastTap === idx ? 0 : idx;
+      lastTap = newVal === 0 ? null : idx;
+      update(newVal);
+      onChange(newVal);
+    });
+    wrap.appendChild(s);
+  }
+  return { wrap, update };
+}
+
+function makeElemRow(num, currentElem) {
+  const row = document.createElement('div');
+  row.className = 'elem-row';
+  const btns = {};
+
+  for (const key of ELEMS) {
+    const btn = document.createElement('div');
+    btn.className = 'elem-btn' + (currentElem === key ? ' sel' : '');
+    btn.title = ELEM_LABELS[key];
+
+    const img = document.createElement('img');
+    img.src = imgSrc(key);
+    img.alt = ELEM_LABELS[key];
+    img.onerror = function() {
+      this.style.display = 'none';
+      const ph = document.createElement('div');
+      ph.className = 'elem-ph';
+      ph.textContent = key;
+      btn.appendChild(ph);
+    };
+    btn.appendChild(img);
+
+    btn.addEventListener('click', () => {
+      const d = getC(num);
+      const newElem = d.element === key ? null : key;
+      setC(num, { element: newElem });
+      for (const k of ELEMS) btns[k].classList.toggle('sel', k === newElem);
+    });
+
+    btns[key] = btn;
+    row.appendChild(btn);
+  }
+  return row;
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+let currentFilter = 'all';
+let currentSearch = '';
+
+function render() {
+  const grid   = document.getElementById('grid');
+  grid.innerHTML = '';
+  const search = currentSearch.toLowerCase();
+  let shown = 0, ownedCount = 0;
+
+  for (const [num, name] of BEASTS) {
+    const d = getC(num);
+    const owned = d.figure > 0;
+    if (owned) ownedCount++;
+    if (currentFilter === 'owned'   && !owned) continue;
+    if (currentFilter === 'unowned' &&  owned) continue;
+    if (search && !name.toLowerCase().includes(search) && !String(num).includes(search)) continue;
+    shown++;
+
+    const card = document.createElement('div');
+    card.className = 'card' + (owned ? ' owned' : '');
+
+    // Image — try lowercase first, fallback to uppercase
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'card-img-wrap';
+    const img = document.createElement('img');
+    img.loading = 'lazy';
+    img.alt = name;
+    // GitHub filenames are case-sensitive; we saw mixed case in the repo
+    // Try the exact filename patterns we saw: 1.jpg (lower) and 10.JPG (upper)
+    img.src = num <= 3 ? `${IMG_BASE}${num}.jpg` : `${IMG_BASE}${num}.JPG`;
+    img.onerror = function() {
+      // Try the other case
+      if (this.src.includes('.JPG')) {
+        this.src = `${IMG_BASE}${num}.jpg`;
+      } else if (this.src.includes('.jpg')) {
+        this.src = `${IMG_BASE}${num}.JPG`;
+      } else {
+        this.style.display = 'none';
+        const ph = document.createElement('div');
+        ph.className = 'card-ph';
+        ph.textContent = num;
+        imgWrap.appendChild(ph);
+      }
+    };
+    imgWrap.appendChild(img);
+    card.appendChild(imgWrap);
+
+    // Name
+    const nameEl = document.createElement('div');
+    nameEl.className = 'card-name';
+    nameEl.textContent = `#${num} ${name}`;
+    card.appendChild(nameEl);
+
+    // Figure stars
+    const figRow = document.createElement('div');
+    figRow.className = 'star-row';
+    const figLbl = document.createElement('div');
+    figLbl.className = 'star-label';
+    figLbl.textContent = 'Figure';
+    const { wrap: figStars } = makeStars(d.figure, val => {
+      setC(num, { figure: val });
+      card.classList.toggle('owned', val > 0);
+      recalcStats();
+    });
+    figRow.appendChild(figLbl);
+    figRow.appendChild(figStars);
+    card.appendChild(figRow);
+
+    // Weapon stars
+    const wpnRow = document.createElement('div');
+    wpnRow.className = 'star-row';
+    const wpnLbl = document.createElement('div');
+    wpnLbl.className = 'star-label';
+    wpnLbl.textContent = 'Weapon';
+    const { wrap: wpnStars } = makeStars(d.weapon, val => {
+      setC(num, { weapon: val });
+      recalcStats();
+    });
+    wpnRow.appendChild(wpnLbl);
+    wpnRow.appendChild(wpnStars);
+    card.appendChild(wpnRow);
+
+    // Element row
+    card.appendChild(makeElemRow(num, d.element));
+    grid.appendChild(card);
+  }
+
+  if (shown === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = 'No beasts found.';
+    grid.appendChild(empty);
+  }
+
+  setStats(shown, ownedCount);
+}
+
+function setStats(shown, owned) {
+  document.getElementById('stats').innerHTML =
+    `<b>${shown}</b>/${BEASTS.length} &nbsp;·&nbsp; Owned <b>${owned}</b>/${BEASTS.length}`;
+}
+
+function recalcStats() {
+  let owned = 0, shown = 0;
+  const search = currentSearch.toLowerCase();
+  for (const [num, name] of BEASTS) {
+    const d = getC(num);
+    if (d.figure > 0) owned++;
+    if (currentFilter === 'owned'   && d.figure === 0) continue;
+    if (currentFilter === 'unowned' && d.figure >  0) continue;
+    if (search && !name.toLowerCase().includes(search) && !String(num).includes(search)) continue;
+    shown++;
+  }
+  setStats(shown, owned);
+}
+
+// ── Toolbar ────────────────────────────────────────────────────────────────
+document.querySelectorAll('.fbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    currentFilter = btn.dataset.f;
+    render();
+  });
+});
+
+document.getElementById('search').addEventListener('input', e => {
+  currentSearch = e.target.value; render();
+});
+
+// ── CSV Export ─────────────────────────────────────────────────────────────
+document.getElementById('btn-export').addEventListener('click', () => {
+  const rows = ['number,name,series,figure,weapon,element'];
+  for (const [num, name, series] of BEASTS) {
+    const d = getC(num);
+    rows.push(`${num},"${name}","${series}",${d.figure},${d.weapon},"${d.element||''}"`);
+  }
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'battle_beasts_collection.csv';
+  a.click();
+  toast('Collection exported!');
+});
+
+// ── CSV Import ─────────────────────────────────────────────────────────────
+document.getElementById('btn-import').addEventListener('click', () =>
+  document.getElementById('csv-file').click());
+
+document.getElementById('csv-file').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    try {
+      const lines = ev.target.result.trim().split('\n');
+      if (!lines[0].toLowerCase().includes('figure')) throw new Error('Invalid CSV format');
+      let count = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const p = lines[i].split(',');
+        const num = parseInt(p[0]);
+        if (!num) continue;
+        const elem = (p[5]||'').replace(/"/g,'').trim().toUpperCase();
+        collection[num] = {
+          figure:  parseInt(p[3])||0,
+          weapon:  parseInt(p[4])||0,
+          element: ELEMS.includes(elem) ? elem : null,
+        };
+        queueSave(num);
+        count++;
+      }
+      render();
+      toast(`Imported ${count} beasts!`);
+    } catch(err) { alert('Import failed: ' + err.message); }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+async function init() {
+  showScreen('loading');
+
+  // Listen for auth state changes
+  supa.auth.onAuthStateChange(async (event, session) => {
+    if (session?.user) {
+      currentUser = session.user;
+      document.getElementById('user-btn').textContent =
+        '👤 ' + (currentUser.email.split('@')[0]);
+      showScreen('loading');
+      await loadCollection(currentUser.id);
+      render();
+      showScreen('app');
+    } else {
+      currentUser = null;
+      showScreen('auth');
+    }
+  });
+
+  // Check existing session
+  const { data: { session } } = await supa.auth.getSession();
+  if (!session) showScreen('auth');
+}
+
+init().catch(console.error);
+</script>
+</body>
+</html>
