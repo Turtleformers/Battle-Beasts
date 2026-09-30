@@ -7,7 +7,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0d0d1a">
 <title>Battle Beasts Checklist</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500;600&display=swap');
 
@@ -27,48 +26,51 @@
 html, body { height: 100%; background: var(--bg); color: var(--fg);
   font-family: 'Barlow', sans-serif; overscroll-behavior: none; }
 
-/* ── AUTH SCREEN ── */
+/* ── LOADING ── */
+#loading-screen {
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 16px;
+}
+.spinner {
+  width: 40px; height: 40px; border: 3px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-txt { color: var(--dim); font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px; letter-spacing: 2px; }
+
+/* ── AUTH ── */
 #auth-screen {
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px;
+  min-height: 100vh; display: none;
+  align-items: center; justify-content: center; padding: 20px;
 }
 .auth-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 32px 28px;
-  width: 100%; max-width: 380px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 32px 28px; width: 100%; max-width: 380px;
 }
 .auth-logo {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 900; font-size: 28px; color: var(--accent);
-  text-align: center; letter-spacing: 2px;
-  text-transform: uppercase; margin-bottom: 6px;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+  font-size: 28px; color: var(--accent); text-align: center;
+  letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;
 }
-.auth-sub {
-  text-align: center; color: var(--dim); font-size: 13px;
-  margin-bottom: 28px;
-}
+.auth-sub { text-align: center; color: var(--dim); font-size: 13px; margin-bottom: 26px; }
 .auth-tabs {
-  display: flex; gap: 0; margin-bottom: 24px;
+  display: flex; margin-bottom: 22px;
   border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
 }
 .auth-tab {
   flex: 1; padding: 9px; text-align: center; cursor: pointer;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 700; font-size: 14px; letter-spacing: .5px;
-  color: var(--dim); background: transparent; border: none;
-  transition: all .15s;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+  font-size: 14px; letter-spacing: .5px; color: var(--dim);
+  background: transparent; border: none; transition: all .15s;
 }
 .auth-tab.on { background: var(--accent); color: #fff; }
-.auth-field {
-  margin-bottom: 14px;
-}
+.auth-field { margin-bottom: 14px; }
 .auth-field label {
-  display: block; font-size: 12px; color: var(--mid);
-  margin-bottom: 5px; font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+  display: block; font-size: 11px; color: var(--mid); margin-bottom: 5px;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+  letter-spacing: .5px; text-transform: uppercase;
 }
 .auth-field input {
   width: 100%; background: var(--bg); border: 1px solid var(--border);
@@ -78,18 +80,20 @@ html, body { height: 100%; background: var(--bg); color: var(--fg);
 .auth-field input:focus { border-color: var(--accent); }
 .auth-submit {
   width: 100%; background: var(--accent); color: #fff; border: none;
-  border-radius: 8px; padding: 12px;
-  font-family: 'Barlow Condensed', sans-serif;
+  border-radius: 8px; padding: 12px; font-family: 'Barlow Condensed', sans-serif;
   font-weight: 900; font-size: 16px; letter-spacing: 1px;
   cursor: pointer; transition: background .15s; margin-top: 4px;
 }
 .auth-submit:hover { background: #c02050; }
 .auth-submit:disabled { background: var(--border); cursor: default; }
-.auth-msg {
-  text-align: center; font-size: 13px; margin-top: 14px;
-  min-height: 18px; color: var(--gold);
-}
+.auth-msg { text-align: center; font-size: 13px; margin-top: 12px;
+  min-height: 18px; color: var(--gold); }
 .auth-msg.err { color: var(--accent); }
+.auth-reset { text-align: center; margin-top: 10px; }
+.auth-reset button {
+  background: none; border: none; color: var(--dim); font-size: 12px;
+  cursor: pointer; text-decoration: underline; font-family: 'Barlow', sans-serif;
+}
 
 /* ── APP ── */
 #app-screen { display: none; flex-direction: column; min-height: 100vh; }
@@ -97,16 +101,14 @@ html, body { height: 100%; background: var(--bg); color: var(--fg);
 /* ── TOOLBAR ── */
 .toolbar {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(10,10,22,0.97);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
-  padding: 9px 12px 7px;
+  background: rgba(10,10,22,0.97); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border); padding: 9px 12px 7px;
 }
 .tb-row1 { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
 .logo {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 900; font-size: 18px; color: var(--accent);
-  letter-spacing: 1px; white-space: nowrap; text-transform: uppercase; flex-shrink: 0;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+  font-size: 18px; color: var(--accent); letter-spacing: 1px;
+  white-space: nowrap; text-transform: uppercase; flex-shrink: 0;
 }
 .search {
   flex: 1; background: var(--surface); border: 1px solid var(--border);
@@ -131,25 +133,22 @@ html, body { height: 100%; background: var(--bg); color: var(--fg);
 .fbtn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .stats { font-size: 11px; color: var(--dim); margin-left: 2px; }
 .stats b { color: var(--gold); }
+.tb-right { margin-left: auto; display: flex; gap: 5px; align-items: center; }
 .tbtn {
   background: transparent; border: 1px solid var(--border);
   color: var(--dim); font-family: 'Barlow Condensed', sans-serif;
   font-weight: 700; font-size: 11px; letter-spacing: .5px;
   padding: 4px 9px; border-radius: 6px; cursor: pointer; transition: all .15s;
 }
-.tbtn.hi { border-color: var(--accent); color: var(--accent); }
-.tb-right { margin-left: auto; display: flex; gap: 5px; }
 .sync-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--gold); display: inline-block;
-  margin-right: 4px; opacity: 0; transition: opacity .3s;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--gold);
+  display: inline-block; opacity: 0; transition: opacity .3s; flex-shrink: 0;
 }
 .sync-dot.active { opacity: 1; }
 
 /* ── GRID ── */
 .grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 7px; padding: 10px 8px 80px;
 }
 @media (min-width: 480px) { .grid { grid-template-columns: repeat(4,1fr); } }
@@ -168,10 +167,8 @@ html, body { height: 100%; background: var(--bg); color: var(--fg);
   box-shadow: 0 0 0 1px var(--accent), 0 4px 18px rgba(230,48,96,.25);
 }
 .card-img-wrap {
-  width: 100%; aspect-ratio: 1;
-  background: var(--surface); border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
+  width: 100%; aspect-ratio: 1; background: var(--surface); border-radius: 7px;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
 .card-img-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .card-ph {
@@ -179,19 +176,14 @@ html, body { height: 100%; background: var(--bg); color: var(--fg);
   font-size: 26px; font-weight: 900; color: var(--border);
 }
 .card-name {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 900; font-size: 12px; color: var(--accent);
-  text-align: center; line-height: 1.2;
-  padding: 5px 2px 5px; word-break: break-word;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+  font-size: 12px; color: var(--accent); text-align: center;
+  line-height: 1.2; padding: 5px 2px 5px; word-break: break-word;
 }
-.star-row {
-  display: flex; align-items: center;
-  gap: 4px; padding: 0 2px 4px;
-}
+.star-row { display: flex; align-items: center; gap: 4px; padding: 0 2px 4px; }
 .star-label {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 700; font-size: 11px; color: #7fff50;
-  width: 44px; flex-shrink: 0;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+  font-size: 11px; color: #7fff50; width: 44px; flex-shrink: 0;
 }
 .stars { display: flex; gap: 2px; }
 .star { width: 16px; height: 16px; cursor: pointer;
@@ -205,10 +197,9 @@ html, body { height: 100%; background: var(--bg); color: var(--fg);
 .elem-btn {
   width: 30%; aspect-ratio: 3/2; border-radius: 5px; overflow: hidden;
   cursor: pointer; border: 2px solid transparent;
-  transition: border-color .15s, opacity .15s;
-  opacity: 0.45; background: var(--surface);
-  display: flex; align-items: center; justify-content: center;
-  -webkit-tap-highlight-color: transparent;
+  transition: border-color .15s, opacity .15s; opacity: 0.45;
+  background: var(--surface); display: flex; align-items: center;
+  justify-content: center; -webkit-tap-highlight-color: transparent;
 }
 .elem-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .elem-btn.sel { opacity: 1; border-color: var(--gold); }
@@ -228,18 +219,6 @@ html, body { height: 100%; background: var(--bg); color: var(--fg);
 }
 .toast.show { transform: translateX(-50%) translateY(0); }
 #csv-file { display: none; }
-
-/* ── LOADING ── */
-#loading-screen {
-  min-height: 100vh; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 16px;
-}
-.spinner {
-  width: 36px; height: 36px; border: 3px solid var(--border);
-  border-top-color: var(--accent); border-radius: 50%;
-  animation: spin .7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -247,13 +226,11 @@ html, body { height: 100%; background: var(--bg); color: var(--fg);
 <!-- Loading -->
 <div id="loading-screen">
   <div class="spinner"></div>
-  <div style="color:var(--dim);font-family:'Barlow Condensed',sans-serif;font-size:16px;letter-spacing:1px;">
-    LOADING…
-  </div>
+  <div class="loading-txt">LOADING…</div>
 </div>
 
 <!-- Auth -->
-<div id="auth-screen" style="display:none;">
+<div id="auth-screen">
   <div class="auth-box">
     <div class="auth-logo">⚔ Battle Beasts</div>
     <div class="auth-sub">Collector Checklist</div>
@@ -271,6 +248,9 @@ html, body { height: 100%; background: var(--bg); color: var(--fg);
     </div>
     <button class="auth-submit" id="auth-btn" onclick="doAuth()">Login</button>
     <div class="auth-msg" id="auth-msg"></div>
+    <div class="auth-reset">
+      <button onclick="doReset()">Forgot password?</button>
+    </div>
   </div>
 </div>
 
@@ -300,23 +280,32 @@ html, body { height: 100%; background: var(--bg); color: var(--fg);
 
 <div class="toast" id="toast"></div>
 
-<script>
-// ── Supabase init ──────────────────────────────────────────────────────────
-const SUPA_URL = 'https://wqbemqdbajmypfkymgxo.supabase.co';
-const SUPA_KEY = 'sb_publishable_Le_B7RtxevZaBiTkBoX23w_zAyKPBxU';
-const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+<script type="module">
+import { initializeApp }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, onAuthStateChanged,
+         signInWithEmailAndPassword,
+         createUserWithEmailAndPassword,
+         signOut, sendPasswordResetEmail }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getFirestore, doc, collection,
+         getDocs, writeBatch, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-// ── Image base URL (GitHub raw) ────────────────────────────────────────────
-const IMG_BASE = 'https://raw.githubusercontent.com/Turtleformers/Battle-Beasts/main/images/';
+// ── Firebase config ────────────────────────────────────────────────────────
+const app = initializeApp({
+  apiKey:            "AIzaSyDIev9p4_kaIslT_zG8cQFn_JAEKMmzkd0",
+  authDomain:        "battle-beasts-32a4e.firebaseapp.com",
+  projectId:         "battle-beasts-32a4e",
+  storageBucket:     "battle-beasts-32a4e.firebasestorage.app",
+  messagingSenderId: "673073374258",
+  appId:             "1:673073374258:web:abbaeefab7d5f5b8cd482b",
+});
+const auth = getAuth(app);
+const db   = getFirestore(app);
 
-function imgSrc(key) {
-  // key is a number (1-76) or 'F','W','T'
-  if (typeof key === 'number') {
-    // Try lowercase first, GitHub is case-sensitive
-    return IMG_BASE + key + '.jpg';
-  }
-  return IMG_BASE + key.toUpperCase() + '.JPG';
-}
+// ── Image base ─────────────────────────────────────────────────────────────
+const IMG = 'https://raw.githubusercontent.com/Turtleformers/Battle-Beasts/main/images/';
 
 // ── Beast data ─────────────────────────────────────────────────────────────
 const BEASTS = [
@@ -364,42 +353,44 @@ const ELEMS = ['F','W','T'];
 const ELEM_LABELS = { F:'Fire', W:'Water', T:'Timber' };
 
 // ── State ──────────────────────────────────────────────────────────────────
-let collection = {};   // num -> { figure, weapon, element }
+let coll = {};
 let currentUser = null;
 let saveQueue = {};
 let saveTimer = null;
 
-function getC(num) {
-  return collection[num] || { figure: 0, weapon: 0, element: null };
-}
+const getC = num => coll[num] || { figure:0, weapon:0, element:null };
 
 function setC(num, updates) {
-  if (!collection[num]) collection[num] = { figure: 0, weapon: 0, element: null };
-  Object.assign(collection[num], updates);
+  if (!coll[num]) coll[num] = { figure:0, weapon:0, element:null };
+  Object.assign(coll[num], updates);
   queueSave(num);
 }
 
-// ── Debounced cloud save ───────────────────────────────────────────────────
+// ── Firestore save (debounced) ─────────────────────────────────────────────
 function queueSave(num) {
   saveQueue[num] = true;
   showSync(true);
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(flushSave, 800);
+  saveTimer = setTimeout(flushSave, 1000);
 }
 
 async function flushSave() {
   if (!currentUser) return;
   const nums = Object.keys(saveQueue).map(Number);
   saveQueue = {};
-  const rows = nums.map(num => ({
-    user_id: currentUser.id,
-    num,
-    figure:  collection[num]?.figure  || 0,
-    weapon:  collection[num]?.weapon  || 0,
-    element: collection[num]?.element || null,
-  }));
-  const { error } = await supa.from('collections').upsert(rows, { onConflict: 'user_id,num' });
-  if (error) console.error('Save error:', error);
+  try {
+    const batch = writeBatch(db);
+    for (const num of nums) {
+      const ref = doc(db, 'users', currentUser.uid, 'collection', String(num));
+      batch.set(ref, {
+        figure:  coll[num]?.figure  || 0,
+        weapon:  coll[num]?.weapon  || 0,
+        element: coll[num]?.element || null,
+        updated: serverTimestamp(),
+      });
+    }
+    await batch.commit();
+  } catch(e) { console.error('Save error:', e); }
   showSync(false);
 }
 
@@ -407,50 +398,82 @@ function showSync(on) {
   document.getElementById('sync-dot').classList.toggle('active', on);
 }
 
-// ── Auth ───────────────────────────────────────────────────────────────────
-let authMode = 'login';
-
-function switchTab(mode) {
-  authMode = mode;
-  document.getElementById('tab-login').classList.toggle('on', mode === 'login');
-  document.getElementById('tab-signup').classList.toggle('on', mode === 'signup');
-  document.getElementById('auth-btn').textContent = mode === 'login' ? 'Login' : 'Create Account';
-  document.getElementById('auth-msg').textContent = '';
-  document.getElementById('auth-msg').className = 'auth-msg';
+// ── Load from Firestore ────────────────────────────────────────────────────
+async function loadColl(uid) {
+  try {
+    const snap = await getDocs(collection(db, 'users', uid, 'collection'));
+    coll = {};
+    snap.forEach(d => {
+      const data = d.data();
+      coll[parseInt(d.id)] = {
+        figure:  data.figure  || 0,
+        weapon:  data.weapon  || 0,
+        element: data.element || null,
+      };
+    });
+  } catch(e) { console.error('Load error:', e); }
 }
 
-async function doAuth() {
+// ── Screen helper ──────────────────────────────────────────────────────────
+function showScreen(w) {
+  document.getElementById('loading-screen').style.display = w==='loading' ? 'flex' : 'none';
+  document.getElementById('auth-screen').style.display    = w==='auth'    ? 'flex' : 'none';
+  const appEl = document.getElementById('app-screen');
+  appEl.style.display = w==='app' ? 'flex' : 'none';
+  if (w==='app') appEl.style.flexDirection = 'column';
+}
+
+// ── Auth helpers ───────────────────────────────────────────────────────────
+let authMode = 'login';
+
+window.switchTab = mode => {
+  authMode = mode;
+  document.getElementById('tab-login').classList.toggle('on', mode==='login');
+  document.getElementById('tab-signup').classList.toggle('on', mode==='signup');
+  document.getElementById('auth-btn').textContent = mode==='login' ? 'Login' : 'Create Account';
+  setMsg('', false);
+};
+
+window.doAuth = async () => {
   const email    = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
   const btn      = document.getElementById('auth-btn');
-  const msg      = document.getElementById('auth-msg');
-
-  if (!email || !password) {
-    setMsg('Please enter email and password.', true); return;
-  }
-  btn.disabled = true;
-  btn.textContent = '…';
-  msg.textContent = '';
-
-  let error;
-  if (authMode === 'login') {
-    ({ error } = await supa.auth.signInWithPassword({ email, password }));
-  } else {
-    ({ error } = await supa.auth.signUp({ email, password }));
-    if (!error) {
-      setMsg('Account created! Check your email to confirm, then log in.', false);
-      switchTab('login');
-      btn.disabled = false;
-      btn.textContent = 'Login';
-      return;
+  if (!email || !password) { setMsg('Please enter email and password.', true); return; }
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    if (authMode === 'login') {
+      await signInWithEmailAndPassword(auth, email, password);
+    } else {
+      await createUserWithEmailAndPassword(auth, email, password);
     }
-  }
-  if (error) {
-    setMsg(error.message, true);
+  } catch(e) {
+    const map = {
+      'auth/invalid-email':        'Invalid email address.',
+      'auth/user-not-found':       'No account with that email.',
+      'auth/wrong-password':       'Incorrect password.',
+      'auth/email-already-in-use': 'Account already exists with that email.',
+      'auth/weak-password':        'Password must be at least 6 characters.',
+      'auth/invalid-credential':   'Incorrect email or password.',
+      'auth/too-many-requests':    'Too many attempts — try again later.',
+    };
+    setMsg(map[e.code] || e.message, true);
     btn.disabled = false;
-    btn.textContent = authMode === 'login' ? 'Login' : 'Create Account';
+    btn.textContent = authMode==='login' ? 'Login' : 'Create Account';
   }
-}
+};
+
+window.doLogout = async () => {
+  await signOut(auth);
+};
+
+window.doReset = async () => {
+  const email = document.getElementById('auth-email').value.trim();
+  if (!email) { setMsg('Enter your email above first.', true); return; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    setMsg('Password reset email sent!', false);
+  } catch(e) { setMsg('Could not send reset email.', true); }
+};
 
 function setMsg(text, isErr) {
   const el = document.getElementById('auth-msg');
@@ -458,113 +481,83 @@ function setMsg(text, isErr) {
   el.className = 'auth-msg' + (isErr ? ' err' : '');
 }
 
-async function doLogout() {
-  await supa.auth.signOut();
-  collection = {};
-  currentUser = null;
-  showScreen('auth');
-}
-
-// Allow Enter key on auth fields
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && document.getElementById('auth-screen').style.display !== 'none') {
-    doAuth();
+  if (e.key==='Enter' && document.getElementById('auth-screen').style.display==='flex')
+    window.doAuth();
+});
+
+// ── Auth state ─────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    currentUser = user;
+    document.getElementById('user-btn').textContent = '👤 ' + user.email.split('@')[0];
+    showScreen('loading');
+    await loadColl(user.uid);
+    render();
+    showScreen('app');
+  } else {
+    currentUser = null;
+    coll = {};
+    showScreen('auth');
   }
 });
 
-// ── Load user collection from Supabase ────────────────────────────────────
-async function loadCollection(userId) {
-  const { data, error } = await supa
-    .from('collections')
-    .select('num,figure,weapon,element')
-    .eq('user_id', userId);
-  if (error) { console.error(error); return; }
-  collection = {};
-  for (const row of (data || [])) {
-    collection[row.num] = {
-      figure:  row.figure  || 0,
-      weapon:  row.weapon  || 0,
-      element: row.element || null,
-    };
-  }
-}
-
-// ── Screen switcher ────────────────────────────────────────────────────────
-function showScreen(which) {
-  document.getElementById('loading-screen').style.display = which === 'loading' ? 'flex'   : 'none';
-  document.getElementById('auth-screen').style.display    = which === 'auth'    ? 'flex'   : 'none';
-  document.getElementById('app-screen').style.display     = which === 'app'     ? 'flex'   : 'none';
-  if (which === 'app') document.getElementById('app-screen').style.flexDirection = 'column';
-}
-
-// ── Star SVG ───────────────────────────────────────────────────────────────
+// ── Stars ──────────────────────────────────────────────────────────────────
 function starSVG(filled) {
-  const fill   = filled ? '#f0b429' : 'none';
-  const stroke = filled ? '#f0b429' : '#4a4a80';
   return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
-      fill="${fill}" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round"/>
+      fill="${filled?'#f0b429':'none'}" stroke="${filled?'#f0b429':'#4a4a80'}"
+      stroke-width="1.5" stroke-linejoin="round"/>
   </svg>`;
 }
 
-function makeStars(currentVal, onChange) {
+function makeStars(val, onChange) {
   const wrap = document.createElement('div');
   wrap.className = 'stars';
-  const starEls = [];
-  let lastTap = null;
-
-  function update(val) {
-    starEls.forEach((s, i) => s.innerHTML = starSVG(i < val));
-  }
-
-  for (let i = 1; i <= 3; i++) {
+  const els = [];
+  let last = null;
+  const update = v => els.forEach((s,i) => s.innerHTML = starSVG(i < v));
+  for (let i=1; i<=3; i++) {
     const s = document.createElement('div');
     s.className = 'star';
-    s.innerHTML = starSVG(i <= currentVal);
-    starEls.push(s);
+    s.innerHTML = starSVG(i <= val);
+    els.push(s);
     const idx = i;
     s.addEventListener('click', () => {
-      const newVal = lastTap === idx ? 0 : idx;
-      lastTap = newVal === 0 ? null : idx;
-      update(newVal);
-      onChange(newVal);
+      const nv = last===idx ? 0 : idx;
+      last = nv===0 ? null : idx;
+      update(nv); onChange(nv);
     });
     wrap.appendChild(s);
   }
-  return { wrap, update };
+  return wrap;
 }
 
-function makeElemRow(num, currentElem) {
+// ── Element row ────────────────────────────────────────────────────────────
+function makeElemRow(num, curElem) {
   const row = document.createElement('div');
   row.className = 'elem-row';
   const btns = {};
-
   for (const key of ELEMS) {
     const btn = document.createElement('div');
-    btn.className = 'elem-btn' + (currentElem === key ? ' sel' : '');
+    btn.className = 'elem-btn' + (curElem===key ? ' sel' : '');
     btn.title = ELEM_LABELS[key];
-
     const img = document.createElement('img');
-    img.src = imgSrc(key);
     img.alt = ELEM_LABELS[key];
+    img.src = `${IMG}${key}.JPG`;
     img.onerror = function() {
-      this.style.display = 'none';
-      const ph = document.createElement('div');
-      ph.className = 'elem-ph';
-      ph.textContent = key;
+      if (!this._t) { this._t=true; this.src=`${IMG}${key.toLowerCase()}.jpg`; return; }
+      this.style.display='none';
+      const ph=document.createElement('div'); ph.className='elem-ph'; ph.textContent=key;
       btn.appendChild(ph);
     };
     btn.appendChild(img);
-
     btn.addEventListener('click', () => {
-      const d = getC(num);
-      const newElem = d.element === key ? null : key;
-      setC(num, { element: newElem });
-      for (const k of ELEMS) btns[k].classList.toggle('sel', k === newElem);
+      const ne = getC(num).element===key ? null : key;
+      setC(num, { element: ne });
+      for (const k of ELEMS) btns[k].classList.toggle('sel', k===ne);
     });
-
-    btns[key] = btn;
-    row.appendChild(btn);
+    btns[key]=btn; row.appendChild(btn);
   }
   return row;
 }
@@ -574,97 +567,66 @@ let currentFilter = 'all';
 let currentSearch = '';
 
 function render() {
-  const grid   = document.getElementById('grid');
+  const grid = document.getElementById('grid');
   grid.innerHTML = '';
-  const search = currentSearch.toLowerCase();
-  let shown = 0, ownedCount = 0;
+  const srch = currentSearch.toLowerCase();
+  let shown=0, owned=0;
 
   for (const [num, name] of BEASTS) {
     const d = getC(num);
-    const owned = d.figure > 0;
-    if (owned) ownedCount++;
-    if (currentFilter === 'owned'   && !owned) continue;
-    if (currentFilter === 'unowned' &&  owned) continue;
-    if (search && !name.toLowerCase().includes(search) && !String(num).includes(search)) continue;
+    const isOwned = d.figure > 0;
+    if (isOwned) owned++;
+    if (currentFilter==='owned'   && !isOwned) continue;
+    if (currentFilter==='unowned' &&  isOwned) continue;
+    if (srch && !name.toLowerCase().includes(srch) && !String(num).includes(srch)) continue;
     shown++;
 
     const card = document.createElement('div');
-    card.className = 'card' + (owned ? ' owned' : '');
+    card.className = 'card' + (isOwned ? ' owned' : '');
 
-    // Image — try lowercase first, fallback to uppercase
-    const imgWrap = document.createElement('div');
-    imgWrap.className = 'card-img-wrap';
+    // Image with case fallback
+    const wrap = document.createElement('div');
+    wrap.className = 'card-img-wrap';
     const img = document.createElement('img');
-    img.loading = 'lazy';
-    img.alt = name;
-    // GitHub filenames are case-sensitive; we saw mixed case in the repo
-    // Try the exact filename patterns we saw: 1.jpg (lower) and 10.JPG (upper)
-    img.src = num <= 3 ? `${IMG_BASE}${num}.jpg` : `${IMG_BASE}${num}.JPG`;
+    img.loading='lazy'; img.alt=name;
+    img.src = `${IMG}${num}.jpg`;
     img.onerror = function() {
-      // Try the other case
-      if (this.src.includes('.JPG')) {
-        this.src = `${IMG_BASE}${num}.jpg`;
-      } else if (this.src.includes('.jpg')) {
-        this.src = `${IMG_BASE}${num}.JPG`;
-      } else {
-        this.style.display = 'none';
-        const ph = document.createElement('div');
-        ph.className = 'card-ph';
-        ph.textContent = num;
-        imgWrap.appendChild(ph);
-      }
+      if (!this._t) { this._t=true; this.src=`${IMG}${num}.JPG`; return; }
+      this.style.display='none';
+      const ph=document.createElement('div'); ph.className='card-ph'; ph.textContent=num;
+      wrap.appendChild(ph);
     };
-    imgWrap.appendChild(img);
-    card.appendChild(imgWrap);
+    wrap.appendChild(img); card.appendChild(wrap);
 
     // Name
-    const nameEl = document.createElement('div');
-    nameEl.className = 'card-name';
-    nameEl.textContent = `#${num} ${name}`;
-    card.appendChild(nameEl);
+    const nm=document.createElement('div'); nm.className='card-name';
+    nm.textContent=`#${num} ${name}`; card.appendChild(nm);
 
     // Figure stars
-    const figRow = document.createElement('div');
-    figRow.className = 'star-row';
-    const figLbl = document.createElement('div');
-    figLbl.className = 'star-label';
-    figLbl.textContent = 'Figure';
-    const { wrap: figStars } = makeStars(d.figure, val => {
-      setC(num, { figure: val });
-      card.classList.toggle('owned', val > 0);
-      recalcStats();
-    });
-    figRow.appendChild(figLbl);
-    figRow.appendChild(figStars);
-    card.appendChild(figRow);
+    const fr=document.createElement('div'); fr.className='star-row';
+    const fl=document.createElement('div'); fl.className='star-label'; fl.textContent='Figure';
+    fr.appendChild(fl);
+    fr.appendChild(makeStars(d.figure, v => {
+      setC(num,{figure:v}); card.classList.toggle('owned',v>0); recalcStats();
+    }));
+    card.appendChild(fr);
 
     // Weapon stars
-    const wpnRow = document.createElement('div');
-    wpnRow.className = 'star-row';
-    const wpnLbl = document.createElement('div');
-    wpnLbl.className = 'star-label';
-    wpnLbl.textContent = 'Weapon';
-    const { wrap: wpnStars } = makeStars(d.weapon, val => {
-      setC(num, { weapon: val });
-      recalcStats();
-    });
-    wpnRow.appendChild(wpnLbl);
-    wpnRow.appendChild(wpnStars);
-    card.appendChild(wpnRow);
+    const wr=document.createElement('div'); wr.className='star-row';
+    const wl=document.createElement('div'); wl.className='star-label'; wl.textContent='Weapon';
+    wr.appendChild(wl);
+    wr.appendChild(makeStars(d.weapon, v => setC(num,{weapon:v})));
+    card.appendChild(wr);
 
-    // Element row
     card.appendChild(makeElemRow(num, d.element));
     grid.appendChild(card);
   }
 
-  if (shown === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'empty';
-    empty.textContent = 'No beasts found.';
-    grid.appendChild(empty);
+  if (!shown) {
+    const e=document.createElement('div'); e.className='empty';
+    e.textContent='No beasts found.'; grid.appendChild(e);
   }
-
-  setStats(shown, ownedCount);
+  setStats(shown, owned);
 }
 
 function setStats(shown, owned) {
@@ -673,14 +635,14 @@ function setStats(shown, owned) {
 }
 
 function recalcStats() {
-  let owned = 0, shown = 0;
-  const search = currentSearch.toLowerCase();
-  for (const [num, name] of BEASTS) {
-    const d = getC(num);
-    if (d.figure > 0) owned++;
-    if (currentFilter === 'owned'   && d.figure === 0) continue;
-    if (currentFilter === 'unowned' && d.figure >  0) continue;
-    if (search && !name.toLowerCase().includes(search) && !String(num).includes(search)) continue;
+  let owned=0, shown=0;
+  const srch = currentSearch.toLowerCase();
+  for (const [num,name] of BEASTS) {
+    const d=getC(num);
+    if (d.figure>0) owned++;
+    if (currentFilter==='owned'   && d.figure===0) continue;
+    if (currentFilter==='unowned' && d.figure>0)   continue;
+    if (srch && !name.toLowerCase().includes(srch) && !String(num).includes(srch)) continue;
     shown++;
   }
   setStats(shown, owned);
@@ -695,23 +657,20 @@ document.querySelectorAll('.fbtn').forEach(btn => {
     render();
   });
 });
-
 document.getElementById('search').addEventListener('input', e => {
-  currentSearch = e.target.value; render();
+  currentSearch=e.target.value; render();
 });
 
 // ── CSV Export ─────────────────────────────────────────────────────────────
 document.getElementById('btn-export').addEventListener('click', () => {
-  const rows = ['number,name,series,figure,weapon,element'];
-  for (const [num, name, series] of BEASTS) {
-    const d = getC(num);
+  const rows=['number,name,series,figure,weapon,element'];
+  for (const [num,name,series] of BEASTS) {
+    const d=getC(num);
     rows.push(`${num},"${name}","${series}",${d.figure},${d.weapon},"${d.element||''}"`);
   }
-  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'battle_beasts_collection.csv';
-  a.click();
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));
+  a.download='battle_beasts_collection.csv'; a.click();
   toast('Collection exported!');
 });
 
@@ -720,106 +679,37 @@ document.getElementById('btn-import').addEventListener('click', () =>
   document.getElementById('csv-file').click());
 
 document.getElementById('csv-file').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async ev => {
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async ev => {
     try {
-      const lines = ev.target.result.trim().split('\n');
-      if (!lines[0].toLowerCase().includes('figure')) throw new Error('Invalid CSV format');
-      let count = 0;
-      for (let i = 1; i < lines.length; i++) {
-        const p = lines[i].split(',');
-        const num = parseInt(p[0]);
-        if (!num) continue;
-        const elem = (p[5]||'').replace(/"/g,'').trim().toUpperCase();
-        collection[num] = {
-          figure:  parseInt(p[3])||0,
-          weapon:  parseInt(p[4])||0,
-          element: ELEMS.includes(elem) ? elem : null,
-        };
-        queueSave(num);
-        count++;
+      const lines=ev.target.result.trim().split('\n');
+      if(!lines[0].toLowerCase().includes('figure')) throw new Error('Invalid CSV');
+      let count=0;
+      for(let i=1;i<lines.length;i++){
+        const p=lines[i].split(',');
+        const num=parseInt(p[0]); if(!num) continue;
+        const elem=(p[5]||'').replace(/"/g,'').trim().toUpperCase();
+        coll[num]={ figure:parseInt(p[3])||0, weapon:parseInt(p[4])||0,
+                    element:ELEMS.includes(elem)?elem:null };
+        queueSave(num); count++;
       }
-      render();
-      toast(`Imported ${count} beasts!`);
-    } catch(err) { alert('Import failed: ' + err.message); }
-    e.target.value = '';
+      render(); toast(`Imported ${count} beasts!`);
+    } catch(err){ alert('Import failed: '+err.message); }
+    e.target.value='';
   };
   reader.readAsText(file);
 });
 
 // ── Toast ──────────────────────────────────────────────────────────────────
 function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2800);
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
 }
 
-// ── Init ───────────────────────────────────────────────────────────────────
-async function init() {
-  showScreen('loading');
-
-  // Safety net — if nothing resolves in 6 seconds, go to login
-  const loadingTimeout = setTimeout(() => {
-    console.warn('Auth timeout — falling back to login screen');
-    showScreen('auth');
-  }, 6000);
-
-  try {
-    // Get existing session directly — most reliable on desktop Chrome
-    const { data: { session }, error } = await supa.auth.getSession();
-
-    if (error || !session) {
-      clearTimeout(loadingTimeout);
-      showScreen('auth');
-      return;
-    }
-
-    // Valid session found — load and go
-    currentUser = session.user;
-    document.getElementById('user-btn').textContent =
-      '👤 ' + (currentUser.email.split('@')[0]);
-    await loadCollection(currentUser.id);
-    clearTimeout(loadingTimeout);
-    render();
-    showScreen('app');
-
-  } catch(e) {
-    console.error('Init error:', e);
-    clearTimeout(loadingTimeout);
-    showScreen('auth');
-  }
-
-  // Listen for subsequent auth changes (login, logout, token refresh)
-  supa.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_OUT') {
-      currentUser = null;
-      collection = {};
-      showScreen('auth');
-      return;
-    }
-    if (event === 'SIGNED_IN' && session?.user) {
-      currentUser = session.user;
-      document.getElementById('user-btn').textContent =
-        '👤 ' + (currentUser.email.split('@')[0]);
-      showScreen('loading');
-      await loadCollection(currentUser.id);
-      render();
-      showScreen('app');
-    }
-    // TOKEN_REFRESHED — silently update user, no screen change needed
-    if (event === 'TOKEN_REFRESHED' && session?.user) {
-      currentUser = session.user;
-    }
-  });
-}
-
-init().catch(e => {
-  console.error('Fatal init error:', e);
-  showScreen('auth');
-});
+// Show auth screen initially — onAuthStateChanged will handle the rest
+showScreen('auth');
 </script>
 </body>
 </html>
