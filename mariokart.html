@@ -65,6 +65,11 @@ html,body{min-height:100%;background:var(--bg);color:var(--fg);font-family:'Barl
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border);color:var(--fg);font-size:13px;padding:9px 18px;border-radius:20px;transition:transform .3s;z-index:999;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0)}
 #csv-file{display:none}
+.imgwrap.zoom{cursor:zoom-in}
+#zoom{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;padding:12px;cursor:zoom-out}
+#zoom.show{display:flex}
+#zoom img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;background:#fff}
+#zoom .zcap{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;text-shadow:0 1px 4px #000;pointer-events:none}
 </style>
 </head>
 <body>
@@ -106,6 +111,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--fg);font-family:'Barl
   <div class="grid" id="grid"></div>
 </div>
 <div class="toast" id="toast"></div>
+<div id="zoom"><img alt=""><div class="zcap"></div></div>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
@@ -167,6 +173,16 @@ async function load(uid){
   }catch(e){ console.error(e); toast('⚠ Could not load your collection: '+(e.code||e.message)); }
 }
 
+// ── Full-screen zoom (tap again to close) ──
+function openZoom(src, cap){
+  const z=$('zoom'), im=z.querySelector('img');
+  im.src=src.replace(/\/scale-to-width-down\/\d+/,'');   // full-size picture
+  im.onerror=()=>{ im.onerror=null; im.src=src; };        // fall back to the thumbnail size
+  z.querySelector('.zcap').textContent=cap; z.classList.add('show');
+}
+$('zoom').onclick=()=>$('zoom').classList.remove('show');
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') $('zoom').classList.remove('show'); });
+
 // ── Rendering ──
 function renderCats(){
   $('cats').innerHTML='';
@@ -201,6 +217,9 @@ function render(){
       if (pics.length>1){
         w.classList.add('flip'); const bd=document.createElement('span'); bd.className='flipbadge'; bd.textContent='Loose ⇄'; w.appendChild(bd);
         w.onclick=()=>{ k=1-k; im.src=pics[k]; bd.textContent=k?'Carded ⇄':'Loose ⇄'; };
+      } else {
+        w.classList.add('zoom'); const bd=document.createElement('span'); bd.className='flipbadge'; bd.textContent='⤢ Zoom'; w.appendChild(bd);
+        w.onclick=()=>openZoom(pics[0], i.title);
       }
     } else w.innerHTML=`<div class="ph">No picture yet<br>${i.toy||''}</div>`;
     card.appendChild(w);
