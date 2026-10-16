@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d0d1a">
+<title>Dr.Wu Checklist</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500;600&display=swap');
+:root{--bg:#0d0d1a;--surface:#141428;--card:#1a1a35;--card-own:#2a1020;--border:#2a2a50;--accent:#e52521;--gold:#fbd000;--green:#43b047;--fg:#e8e8f0;--dim:#6666aa;--mid:#9999cc}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:var(--bg);color:var(--fg);font-family:'Barlow',sans-serif;overscroll-behavior:none}
+.screen{min-height:100vh;display:none;align-items:center;justify-content:center;padding:20px}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px 28px;width:100%;max-width:380px}
+.auth-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--accent);text-align:center;letter-spacing:2px;text-transform:uppercase}
+.auth-sub{text-align:center;color:var(--dim);font-size:13px;margin:4px 0 22px}
+.auth-field{margin-bottom:14px}
+.auth-field label{display:block;font-size:11px;color:var(--mid);margin-bottom:5px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.auth-field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--fg);font-size:14px;outline:none}
+.auth-field input:focus{border-color:var(--accent)}
+.btn-main{width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:12px;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;letter-spacing:1px;cursor:pointer}
+.btn-main:disabled{background:var(--border)}
+.auth-msg{text-align:center;font-size:13px;margin-top:12px;min-height:18px;color:var(--accent)}
+.auth-note{text-align:center;font-size:12px;color:var(--dim);margin-top:14px;line-height:1.4}
+.auth-note a{color:var(--mid)}
+#app-screen{display:none;flex-direction:column;min-height:100vh}
+.toolbar{position:sticky;top:0;z-index:100;background:rgba(10,10,22,.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:9px 12px 7px}
+.row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.row+.row{margin-top:7px}
+.logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+.logo a{color:var(--dim);text-decoration:none;font-size:12px;margin-left:6px;letter-spacing:.5px}
+.search{flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 11px;color:var(--fg);font-size:14px;outline:none}
+.chip{background:var(--surface);border:1px solid var(--border);color:var(--mid);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:.5px;padding:4px 10px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.cats{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.stats{font-size:11px;color:var(--dim)}
+.stats b{color:var(--gold)}
+.right{margin-left:auto;display:flex;gap:5px;align-items:center}
+.sync{width:7px;height:7px;border-radius:50%;background:var(--gold);opacity:0;transition:opacity .3s}
+.sync.on{opacity:1}
+.sync.err{opacity:1;background:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:10px 8px 80px}
+@media(min-width:480px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:720px){.grid{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:1000px){.grid{grid-template-columns:repeat(6,1fr);gap:10px}}
+.card{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:6px 6px 8px;display:flex;flex-direction:column;transition:border-color .2s,background .2s}
+.card.owned{background:var(--card-own);border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.imgwrap{position:relative;width:100%;aspect-ratio:1;background:#fff;border-radius:7px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.imgwrap img{width:100%;height:100%;object-fit:contain}
+.imgwrap.flip{cursor:pointer}
+.ph{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:14px;color:#999;text-align:center;padding:8px}
+.flipbadge{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-weight:700;pointer-events:none}
+.toy{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;color:var(--dim);margin-top:5px;letter-spacing:.5px}
+.name{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;color:var(--gold);line-height:1.15}
+.sub{font-size:11.5px;color:var(--mid);line-height:1.3;margin-top:2px;flex:1}
+.toggles{display:flex;gap:5px;margin-top:7px}
+.tg{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--dim);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;padding:6px 0;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tg.on{background:var(--green);border-color:var(--green);color:#fff}
+.empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--dim);font-family:'Barlow Condensed',sans-serif;font-size:20px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border);color:var(--fg);font-size:13px;padding:9px 18px;border-radius:20px;transition:transform .3s;z-index:999;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+#csv-file{display:none}
+.imgwrap.zoom{cursor:zoom-in}
+#zoom{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;padding:12px;cursor:zoom-out}
+#zoom.show{display:flex}
+#zoom img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;background:#fff}
+#zoom .zcap{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;text-shadow:0 1px 4px #000;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="loading-screen" class="screen" style="display:flex"><div class="spinner"></div></div>
+
+<div id="auth-screen" class="screen">
+  <div class="auth-box">
+    <div class="auth-logo">Dr.Wu</div>
+    <div class="auth-sub">Hot Wheels Collector Checklist</div>
+    <div class="auth-field"><label>Email</label><input type="email" id="auth-email" autocomplete="email"></div>
+    <div class="auth-field"><label>Password</label><input type="password" id="auth-password" autocomplete="current-password"></div>
+    <button class="btn-main" id="auth-btn">Login</button>
+    <div class="auth-msg" id="auth-msg"></div>
+    <div class="auth-note">Same login as your Battle Beasts checklist.<br>Need an account? <a href="./">Sign up there first</a>.</div>
+  </div>
+</div>
+
+<div id="app-screen">
+  <div class="toolbar">
+    <div class="row">
+      <div class="logo">Dr.Wu<a href="./">⚔ Battle Beasts</a></div>
+      <input class="search" id="search" type="search" placeholder="Search name or code, e.g. E23…" autocomplete="off">
+      <button class="chip" id="btn-user">Sign Out</button>
+    </div>
+    <div class="row cats" id="cats"></div>
+    <div class="row">
+      <button class="chip on" data-f="all">All</button>
+      <button class="chip" data-f="owned">Owned</button>
+      <button class="chip" data-f="unowned">Unowned</button>
+      <span class="stats" id="stats"></span>
+      <div class="right">
+        <span class="sync" id="sync" title="Saving…"></span>
+        <button class="chip" id="btn-export">Export</button>
+        <button class="chip" id="btn-import">Import</button>
+        <input type="file" id="csv-file" accept=".csv">
+      </div>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+<div class="toast" id="toast"></div>
+<div id="zoom"><img alt=""><div class="zcap"></div></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getFirestore, doc, collection, getDocs, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+// Same Firebase project as the Battle Beasts page, so one login covers both.
+const app = initializeApp({
+  apiKey:"AIzaSyDIev9p4_kaIslT_zG8cQFn_JAEKMmzkd0",
+  authDomain:"battle-beasts-32a4e.firebaseapp.com",
+  projectId:"battle-beasts-32a4e",
+  storageBucket:"battle-beasts-32a4e.firebasestorage.app",
+  messagingSenderId:"673073374258",
+  appId:"1:673073374258:web:abbaeefab7d5f5b8cd482b",
+});
+const auth = getAuth(app);
+const db = getFirestore(app);
+const COLL = 'drwu';   // stored at users/{uid}/drwu/{itemId}, separate from Battle Beasts and Mario Kart
+
+// Dr.Wu Extreme Warfare (DW-E) and Extreme Squadron (DW-ES) listings from ShowZStore; pictures load from ShowZStore's image server.
+const ITEMS = [{"id": "p2576", "cat": "Extreme Warfare", "toy": "DW-E01 + DW-E02B", "title": "Destroy Emperpo Galvatron & Monitor Officer Soundblaster", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2011/products/16/7b204c324a.jpg.500x500.jpg"}, {"id": "p2754", "cat": "Extreme Warfare", "toy": "DW-E01B + DW-E02", "title": "Destroy Emperpo Galvatron Black Version & Monitor Officer Soundwave", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2012/products/10/edf8d4425d.jpg.500x500.jpg"}, {"id": "p6047", "cat": "Extreme Warfare", "toy": "DW-E01C + DW-E29", "title": "Destroy Emperor Galvatron & Destroy Planet Grand Galvatron Japanese Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2403/products/04/ae5a15ad1d.jpg.500x500.jpg"}, {"id": "p6048", "cat": "Extreme Warfare", "toy": "DW-E01M + DW-E29", "title": "Destroy Emperor Galvatron & Destroy Planet Grand Galvatron Comic Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2403/products/04/cf10c40a79.jpg.500x500.jpg"}, {"id": "p6049", "cat": "Extreme Warfare", "toy": "DW-E01S + DW-E29", "title": "Destroy Emperor Galvatron & Destroy Planet Grand Galvatron Transparent Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2403/products/04/0f9f7c3e81.jpg.500x500.jpg"}, {"id": "p2710", "cat": "Extreme Warfare", "toy": "DW-E02 + DW-E03", "title": "Monitor Officer Soundwave & Big Surge Beachcomber", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2106/products/10/5d854ed65f.jpg.500x500.jpg"}, {"id": "p6243", "cat": "Extreme Warfare", "toy": "DW-E02 + DW-E16", "title": "Monitor Soundwave & Sound Master Blaster", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2405/products/15/0925429795.jpg.500x500.jpg"}, {"id": "p7351", "cat": "Extreme Warfare", "toy": "DW-E02A + DW-E16A", "title": "Monitor Soundwave & Sound Master Blaster Animation Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2509/products/26/a626d4d923.jpg.500x500.jpg"}, {"id": "p7358", "cat": "Extreme Warfare", "toy": "DW-E02B + DW-E16T", "title": "Monitor Officer Soundblaster & Twinhorn Twin Twist", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2509/products/30/9dcd3f3a24.jpg.500x500.jpg"}, {"id": "p6133", "cat": "Extreme Warfare", "toy": "DW-E02D + DW-E16D", "title": "Monitor Soundwave & Sound Master Blaster Battle Damaged Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2404/products/07/d144069fe4.jpg.500x500.jpg"}, {"id": "p6132", "cat": "Extreme Warfare", "toy": "DW-E02M + DW-E16M", "title": "Monitor Soundwave & Sound Master Blaster", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2404/products/07/a309a0214f.jpg.500x500.jpg"}, {"id": "p7357", "cat": "Extreme Warfare", "toy": "DW-E02S + DW-E16S", "title": "Monitor Soundwave & Sound Master Blaster Transparent Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2509/products/30/161f3aa923.jpg.500x500.jpg"}, {"id": "p7252", "cat": "Extreme Warfare", "toy": "DW-E22 + DW-E03", "title": "Space Disc Cosmo & Big Surge Beachcomber", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2508/products/18/bc952425ac.jpg.500x500.jpg"}, {"id": "p7201", "cat": "Extreme Warfare", "toy": "DW-E22G + DW-E03G", "title": "Space Disc Cosmo & Big Surge Beachcomber", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2507/products/29/42eb0116e6.jpg.500x500.jpg"}, {"id": "p7797", "cat": "Extreme Warfare", "toy": "DW-E03T + DW-E10T", "title": "Big Surge Beachcomber & Spray Drift Seaspray Transparent Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2604/products/23/bfcd6f5fd4.png.500x500.png"}, {"id": "p5918", "cat": "Extreme Warfare", "toy": "DW-E04", "title": "Prime Commander Optimus Prime w/ Trailer Dormancy Limited Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2401/products/16/5281e002ca.jpg.500x500.jpg"}, {"id": "p5911", "cat": "Extreme Warfare", "toy": "DW-E04", "title": "Prime Commander Optimus Prime w/ Trailer Spark Fade Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2401/products/12/1111c02125.jpg.500x500.jpg"}, {"id": "p2702", "cat": "Extreme Warfare", "toy": "DW-E04", "title": "Prime Commander Optimus Prime w/ Trailer", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2106/products/10/8c336ff066.jpg.500x500.jpg"}, {"id": "p3215", "cat": "Extreme Warfare", "toy": "DW-E04B", "title": "Prime Commander Nemesis Prime w/ Trailer Black Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2106/products/10/228e11c1bb.jpg.500x500.jpg"}, {"id": "p3213", "cat": "Extreme Warfare", "toy": "DW-E04D", "title": "Prime Commander Optimus Prime w/ Trailer Sleep Mode Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2106/products/10/17f6eb56ef.jpg.500x500.jpg"}, {"id": "p5160", "cat": "Extreme Warfare", "toy": "DW-E04D", "title": "Prime Commander Optimus Prime w/ Trailer", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2305/products/10/add264c41c.jpg.500x500.jpg"}, {"id": "p5161", "cat": "Extreme Warfare", "toy": "DW-E04E", "title": "Prime Commander Optimus Prime Eva Version w/ Trailer", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2305/products/10/79c4ac195e.jpg.500x500.jpg"}, {"id": "p3840", "cat": "Extreme Warfare", "toy": "DW-E04G", "title": "Prime Commander Optimus Prime Golden Version w/ Trailer", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2201/products/13/733fb73897.jpg.500x500.jpg"}, {"id": "p7230", "cat": "Extreme Warfare", "toy": "DW-E04M", "title": "Prime Commander w/ Trailer Comic Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2508/products/11/12d3446f62.jpg.500x500.jpg"}, {"id": "p3214", "cat": "Extreme Warfare", "toy": "DW-E04P", "title": "Prime Commander Optimus Prime w/ Trailer Shattered Glass Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2106/products/10/c4c16eb207.jpg.500x500.jpg"}, {"id": "p4658", "cat": "Extreme Warfare", "toy": "DW-E04T", "title": "Prime Commander Optimus Prime Toxitron Version w/ Trailer", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2608/file/454dc7907f.jpg.500x500.jpg"}, {"id": "p7029", "cat": "Extreme Warfare", "toy": "DW-E04T", "title": "Prime Commander w/ Trailer Transparent Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2505/products/07/605218fc32.jpg.500x500.jpg"}, {"id": "p3793", "cat": "Extreme Warfare", "toy": "DW-E04W", "title": "Prime Commander Ultra Magnus w/ Trailer", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2112/products/23/d50b9200f1.jpg.500x500.jpg"}, {"id": "p7228", "cat": "Extreme Warfare", "toy": "DW-E04Y", "title": "Prime Commander w/ Trailer Yellow Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2508/products/09/dd22d9e9c9.jpg.500x500.jpg"}, {"id": "p3469", "cat": "Extreme Warfare", "toy": "DW-E07 + DW-E08", "title": "Sword Dancer Slamdance Traveler Plane Raindance & Patriot Tank Grandslam", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2208/products/13/6b7cfeb362.jpg.500x500.jpg"}, {"id": "p4617", "cat": "Extreme Warfare", "toy": "DW-E07 + DW-E08", "title": "Sword Dancer Slamdance Traveler Plane Raindance & Patriot Tank Grandslam Toys color Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2210/products/31/a3ab868541.jpg.500x500.jpg"}, {"id": "p4381", "cat": "Extreme Warfare", "toy": "DW-E07B + DW-E08B", "title": "Sword Dancer Slamdance Traveler Plane Raindance & Patriot Tank Grandslam Black Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2208/products/15/a71ad85d31.jpg.500x500.jpg"}, {"id": "p4380", "cat": "Extreme Warfare", "toy": "DW-E07G + DW-E08G", "title": "Sword Dancer Slamdance Traveler Plane Raindance & Patriot Tank Grandslam Green Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2208/products/13/0f1e8e8dd7.jpg.500x500.jpg"}, {"id": "p3519", "cat": "Extreme Warfare", "toy": "DW-E09 + DW-E10", "title": "Spray Drift Seaspray & Star Fear Starscream", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2202/products/07/92c54faba7.jpg.500x500.jpg"}, {"id": "p6317", "cat": "Extreme Warfare", "toy": "DW-E09 + DW-E12 + DW-E15", "title": "Star Fear Starscream & Blue Thunder Thundercracker & Dark Sky Sky Warp", "sub": "Set of 3", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2406/products/18/2076db6a30.jpg.500x500.jpg"}, {"id": "p6948", "cat": "Extreme Warfare", "toy": "DW-E09D", "title": "Star Fear Through Starscream Ashen Color version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2503/products/21/a1c84ba59c.jpg.500x500.jpg"}, {"id": "p6870", "cat": "Extreme Warfare", "toy": "DW-E09G", "title": "Star Fear Starscream Golden Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2502/products/02/2ae121c689.jpg.500x500.jpg"}, {"id": "p7934", "cat": "Extreme Warfare", "toy": "DW-E09M", "title": "Star Fear Starscream Shattered Glass Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2606/products/18/83bf68f5d8.png.500x500.png"}, {"id": "p6318", "cat": "Extreme Warfare", "toy": "DW-E09T", "title": "Star Fear Through Starscream Transparent Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2501/products/24/5b9e76b94b.jpg.500x500.jpg"}, {"id": "p7251", "cat": "Extreme Warfare", "toy": "DW-E13 + DW-E10", "title": "Sky Glider Powerglide & Spray Drift Seaspray", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2508/products/18/15c9045669.jpg.500x500.jpg"}, {"id": "p3886", "cat": "Extreme Warfare", "toy": "DW-E10B + DW-E11", "title": "Black Seaspray & Acid Storm", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2202/products/28/2c614844d3.jpg.500x500.jpg"}, {"id": "p7202", "cat": "Extreme Warfare", "toy": "DW-E13G + DW-E10G", "title": "Sky Glider Powerglide & Spray Drift Seaspray", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2507/products/29/3ffaa466c5.jpg.500x500.jpg"}, {"id": "p3521", "cat": "Extreme Warfare", "toy": "DW-E12 + DW-E13", "title": "Thundercracker & Sky Glider Powerglide", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2202/products/07/7327693a07.jpg.500x500.jpg"}, {"id": "p8096", "cat": "Extreme Warfare", "toy": "DW-E40T + DW-E13T", "title": "Red Tank Warpath & Sky Glider Powerglide Clear Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2609/products/02/6ab4ea6ba1.jpg.500x500.jpg"}, {"id": "p3887", "cat": "Extreme Warfare", "toy": "DW-E13W + DW-E14", "title": "Sky Ghost Powerglide & Bitstream", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2202/products/28/3b3e54299b.jpg.500x500.jpg"}, {"id": "p4834", "cat": "Extreme Warfare", "toy": "DW-E14B", "title": "Energy Dragon Trypticon Dark Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2301/products/29/e883d1bf9a.jpg.500x500.jpg"}, {"id": "p4938", "cat": "Extreme Warfare", "toy": "DW-E14I", "title": "Energy Dragon Trypticon", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2303/products/11/007e9da58a.jpg.500x500.jpg"}, {"id": "p4967", "cat": "Extreme Warfare", "toy": "DW-E14M", "title": "Energy Dragon Trypticon Metallic Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2303/products/14/3e5042e030.jpg.500x500.jpg"}, {"id": "p4833", "cat": "Extreme Warfare", "toy": "DW-E14P", "title": "Energy Dragon Trypticon Toxic Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2301/products/29/17af3f5093.jpg.500x500.jpg"}, {"id": "p4939", "cat": "Extreme Warfare", "toy": "DW-E14S", "title": "Energy Dragon Trypticon", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2303/products/11/90793a8a32.jpg.500x500.jpg"}, {"id": "p3523", "cat": "Extreme Warfare", "toy": "DW-E15 + DW-E16", "title": "Skywarp & Sound Master Blaster", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2202/products/07/f2dff014ae.jpg.500x500.jpg"}, {"id": "p3888", "cat": "Extreme Warfare", "toy": "DW-E16T + DW-E17", "title": "Twinhorn Blaster & Sunstorm", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2202/products/28/0b5dba6fd5.jpg.500x500.jpg"}, {"id": "p3510", "cat": "Extreme Warfare", "toy": "DW-E18", "title": "Energy Dragon Trypticon", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2212/products/03/c5391cdf68.jpg.500x500.jpg"}, {"id": "p4760", "cat": "Extreme Warfare", "toy": "DW-E18", "title": "Energy Dragon Trypticon Damage Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2212/products/29/547e5b2fea.jpg.500x500.jpg"}, {"id": "p6598", "cat": "Extreme Warfare", "toy": "DW-E18E", "title": "Evil Dragon Gigastorm", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2411/products/26/a9a6043982.jpg.500x500.jpg"}, {"id": "p4986", "cat": "Extreme Warfare", "toy": "DW-E19 + DW-E20", "title": "Propel Thrust & Elegy Dirge", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2303/products/19/962cd62ee8.jpg.500x500.jpg"}, {"id": "p7307", "cat": "Extreme Warfare", "toy": "DW-E19 + DW-E20 + DW-E21", "title": "Propel Thrust & Elegy Dirge & Turbo Ramjet", "sub": "Set of 3", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2509/products/06/fc5adfec1a.jpg.500x500.jpg"}, {"id": "p5144", "cat": "Extreme Warfare", "toy": "DW-E19G + DW-E20Y", "title": "Propel Thrust & Elegy Dirge", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2305/products/06/b490a6be72.jpg.500x500.jpg"}, {"id": "p4985", "cat": "Extreme Warfare", "toy": "DW-E21", "title": "Turbo Ramjet & Flying Saucer", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2303/products/19/10ae7d5acb.jpg.500x500.jpg"}, {"id": "p5145", "cat": "Extreme Warfare", "toy": "DW-E21B + DW-E22M", "title": "Turbo Ramjet & Heaven Eye Cosmos", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2305/products/06/7fcf210cc6.jpg.500x500.jpg"}, {"id": "p5159", "cat": "Extreme Warfare", "toy": "DW-E21S + DW-E22B", "title": "Sand Dust Ramjet & Pathfinder Cosmos", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2305/products/10/99aa82c405.jpg.500x500.jpg"}, {"id": "p7239", "cat": "Extreme Warfare", "toy": "DW-E22T + DW-E34T", "title": "Space Disc & Wasp Transparent Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2508/products/14/e1c5f03ce3.jpg.500x500.jpg"}, {"id": "p5352", "cat": "Extreme Warfare", "toy": "DW-E23", "title": "Tactical Commander Ultra Magnus Primary Color Version w/o Inner Robot", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2307/products/14/8310e33a31.jpg.500x500.jpg"}, {"id": "p5348", "cat": "Extreme Warfare", "toy": "DW-E23", "title": "Tactical Commander Ultra Magnus Gray Trial Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2307/products/13/c64bc3d08d.jpg.500x500.jpg"}, {"id": "p5238", "cat": "Extreme Warfare", "toy": "DW-E23", "title": "Tactical Commander Ultra Magnus", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2306/products/12/c2aa9ae5b2.jpg.500x500.jpg"}, {"id": "p5265", "cat": "Extreme Warfare", "toy": "DW-E23B", "title": "Tactical Commander Ultra Magnus Black Version w/o Inner Robot", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2306/products/20/408f2fad04.jpg.500x500.jpg"}, {"id": "p5267", "cat": "Extreme Warfare", "toy": "DW-E23D", "title": "Tactical Commander Ultra Magnus Diaclone Color Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2306/products/20/86a1137dc3.jpg.500x500.jpg"}, {"id": "p7798", "cat": "Extreme Warfare", "toy": "DW-E23G", "title": "Tactical Commander Ultra Magnus G1 Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2604/products/23/eb261ab858.png.500x500.png"}, {"id": "p5266", "cat": "Extreme Warfare", "toy": "DW-E23P", "title": "Tactical Commander Ultra Magnus Purple Version w/o Inner Robot", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2306/products/20/3ceece4d58.jpg.500x500.jpg"}, {"id": "p7356", "cat": "Extreme Warfare", "toy": "DW-E23S", "title": "Tactical Commander Transparent Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2509/products/30/de40f8bf64.jpg.500x500.jpg"}, {"id": "p7428", "cat": "Extreme Warfare", "toy": "DW-E23T", "title": "Tactical Commander Ultra Magnus Transparent Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2511/products/07/e31a6e3314.jpg.500x500.jpg"}, {"id": "p5237", "cat": "Extreme Warfare", "toy": "DW-E23T", "title": "Tactical Commander Ultra Magnus Toy Color Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2306/products/12/a6c476d98d.jpg.500x500.jpg"}, {"id": "p5604", "cat": "Extreme Warfare", "toy": "DW-E24", "title": "Firefighters Inferno", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2309/products/30/7c95de1dc8.jpg.500x500.jpg"}, {"id": "p6185", "cat": "Extreme Warfare", "toy": "DW-E30 + DW-E24M", "title": "Iron Jack Wheeljack & FireFighters Inferno Shattered Glass Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2404/products/22/ce7b039cd8.jpg.500x500.jpg"}, {"id": "p5986", "cat": "Extreme Warfare", "toy": "DW-E25 + DW-E26", "title": "Grapple & Black Perceptor", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2402/products/12/7735d2a35f.jpg.500x500.jpg"}, {"id": "p5983", "cat": "Extreme Warfare", "toy": "DW-E27 + DW-E28", "title": "Perceptor & Green Grapple", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2402/products/10/35edc4ee01.jpg.500x500.jpg"}, {"id": "p5179", "cat": "Extreme Warfare", "toy": "DW-E29", "title": "Destroy Planet Grand Galvatron", "sub": "Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2305/products/18/138ebf5b69.jpg.500x500.jpg"}, {"id": "p6184", "cat": "Extreme Warfare", "toy": "DW-E33 + DW-E30M", "title": "Hammer Bulkhead & Iron Jack Wheeljack Shattered Glass Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2404/products/22/d56102c028.jpg.500x500.jpg"}, {"id": "p6183", "cat": "Extreme Warfare", "toy": "DW-E31 + DW-E32", "title": "Gas Smoke Exhaust & Fireball Artfire", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2404/products/22/0d40b960db.jpg.500x500.jpg"}, {"id": "p6214", "cat": "Extreme Warfare", "toy": "DW-E34 + DW-E35", "title": "Wasp Bumblebee & Wingman Cyclonus", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2405/products/02/412b132a46.jpg.500x500.jpg"}, {"id": "p6329", "cat": "Extreme Warfare", "toy": "DW-E34B + DW-E35T", "title": "Golden Beetle Goldbug & Wingman Cyclonus Shattered Glass Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2406/products/24/10037a224e.jpg.500x500.jpg"}, {"id": "p6216", "cat": "Extreme Warfare", "toy": "DW-E34G + DW-E35M", "title": "Golden Beetle Goldbug & Wingman Cyclonus Shattered Glass Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2405/products/02/f6df3eb1ab.jpg.500x500.jpg"}, {"id": "p6215", "cat": "Extreme Warfare", "toy": "DW-E34M + DW-E35S", "title": "Wasp Bug Bite & Wingman Cyclonus Comic Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2405/products/05/b3061deb44.jpg.500x500.jpg"}, {"id": "p4197", "cat": "Extreme Warfare", "toy": "DW-E36", "title": "Menace King Megatron", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2608/file/f1bb44b0a3.jpg.500x500.jpg"}, {"id": "p6572", "cat": "Extreme Warfare", "toy": "DW-E36G", "title": "Menace King Megatron Golden Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2409/products/25/f2d15c59dc.jpg.500x500.jpg"}, {"id": "p6296", "cat": "Extreme Warfare", "toy": "DW-E36S", "title": "Menace King Megatron Transparent Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2406/products/09/075eeccbaa.jpg.500x500.jpg"}, {"id": "p6295", "cat": "Extreme Warfare", "toy": "DW-E36X", "title": "Menace King Megatron Toy Color Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2406/products/09/743e5933b8.jpg.500x500.jpg"}, {"id": "p6252", "cat": "Extreme Warfare", "toy": "DW-E37 + DW-E38", "title": "Leap Cliffjumper & Pulse Gun Shockwave Comic Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2506/photo/9d32dd1499.jpg.500x500.jpg"}, {"id": "p6251", "cat": "Extreme Warfare", "toy": "DW-E37 + DW-E38", "title": "Leap Cliffjumper & Pulse Gun Shockwave Toy Color Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2505/products/24/391671a8a4.jpg.500x500.jpg"}, {"id": "p7087", "cat": "Extreme Warfare", "toy": "DW-E37 + DW-E38", "title": "Leap & Pulse Gun", "sub": "Set of 2 · Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2505/products/23/9c698f8ee5.jpg.500x500.jpg"}, {"id": "p6929", "cat": "Extreme Warfare", "toy": "DW-E37M + DW-E38M", "title": "Leap Cliffjumper & Pulse Gun Shockwave shattered Glass Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2506/products/06/624bbd00e8.jpg.500x500.jpg"}, {"id": "p6250", "cat": "Extreme Warfare", "toy": "DW-E39 + DW-E38B", "title": "Wheel Hub hubcap & Pulse Gun Shockwave Black Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2505/photo/f1d40431f0.jpg.500x500.jpg"}, {"id": "p6391", "cat": "Extreme Warfare", "toy": "DW-E40 + DW-E41", "title": "Red Tank Warpath & Star Shuttle Scourge", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2506/photo/d70940a97e.jpg.500x500.jpg"}, {"id": "p6392", "cat": "Extreme Warfare", "toy": "DW-E40G + DW-E42", "title": "Green Tank Warpath & Shi Fu Alpha Trion", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2506/products/09/40ddf3082a.jpg.500x500.jpg"}, {"id": "p6992", "cat": "Extreme Warfare", "toy": "DW-E40P + DW-E41T", "title": "Purple Tank & Star Shuttle Shattered Glass Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2506/products/09/a95f6155c4.jpg.500x500.jpg"}, {"id": "p6398", "cat": "Extreme Warfare", "toy": "DW-E41M", "title": "Star Shuttle Scourge", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2506/photo/4c2930bdda.jpg.500x500.jpg"}, {"id": "p6501", "cat": "Extreme Warfare", "toy": "DW-E43 + DW-E44", "title": "Patrolman Prowl & Grasshopper Kickback", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2512/products/02/73d498da19.jpg.500x500.jpg"}, {"id": "p6519", "cat": "Extreme Warfare", "toy": "DW-E45 + DW-E46", "title": "Silver Lightning Bluestreak & Claw Worm Shrapnel", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2601/products/04/f10071e324.jpg.500x500.jpg"}, {"id": "p6520", "cat": "Extreme Warfare", "toy": "DW-E47 + DW-E48", "title": "Smoke Dust Smokescreen & Beetle Horn Bombshell", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2601/products/04/7f17b60130.jpg.500x500.jpg"}, {"id": "p6609", "cat": "Extreme Warfare", "toy": "DW-E49 + DW-E50", "title": "Side Slip Sideswipe & Plunder Kickback", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2601/products/12/bd58cf1b79.jpg.500x500.jpg"}, {"id": "p7765", "cat": "Extreme Warfare", "toy": "DW-E49M + DW-E70G", "title": "Sideslip & Cicada", "sub": "Set of 2 · Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2604/products/10/e389ed2fed.png.500x500.png"}, {"id": "p6611", "cat": "Extreme Warfare", "toy": "DW-E49Y + DW-E53", "title": "Tiger Mark Tigertrack & Butcher Shrapnel", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2601/products/09/f4bed31018.jpg.500x500.jpg"}, {"id": "p6610", "cat": "Extreme Warfare", "toy": "DW-E51 + DW-E52", "title": "Red Line Red Alert & Firenet Bombshell", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2601/products/13/0e79987871.jpg.500x500.jpg"}, {"id": "p7751", "cat": "Extreme Warfare", "toy": "DW-E54", "title": "Iron Fortress Mini Metroplex Battle Damaged Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2604/products/09/3e97eb1928.png.500x500.png"}, {"id": "p5844", "cat": "Extreme Warfare", "toy": "DW-E54", "title": "Iron Fortress Mini Metroplex", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2411/photo/240739b3eb.jpg.500x500.jpg"}, {"id": "p6680", "cat": "Extreme Warfare", "toy": "DW-E54B", "title": "Iron Fortress SD Metroplex Shattered Glass Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2411/products/06/19b1a767ad.jpg.500x500.jpg"}, {"id": "p6681", "cat": "Extreme Warfare", "toy": "DW-E54B", "title": "Iron Fortress SD Metroplex Shattered Glass Blue Eyes Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2411/products/06/ffaefe12b9.jpg.500x500.jpg"}, {"id": "p7563", "cat": "Extreme Warfare", "toy": "DW-E54G", "title": "Iron Fortress Mini Metroplex", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2604/products/03/c03932d04b.jpg.500x500.jpg"}, {"id": "p7744", "cat": "Extreme Warfare", "toy": "DW-E54G", "title": "Iron Fortress Mini Metroplex Fan Edition", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2604/products/03/462bcb9543.jpg.500x500.jpg"}, {"id": "p5895", "cat": "Extreme Warfare", "toy": "DW-E55", "title": "Mini-Cassettes Impact Wave Dairu & Zauru", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2411/products/07/9405e7633c.jpg.500x500.jpg"}, {"id": "p6685", "cat": "Extreme Warfare", "toy": "DW-E55B", "title": "Mini-Cassettes Impact Wave Dairu & Zauru Black Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2411/products/28/3216898313.jpg.500x500.jpg"}, {"id": "p6684", "cat": "Extreme Warfare", "toy": "DW-E55T", "title": "Mini-Cassettes Impact Wave Dairu & Zauru Toy Color Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2411/products/07/4787618209.jpg.500x500.jpg"}, {"id": "p6737", "cat": "Extreme Warfare", "toy": "DW-E56", "title": "Giant Claw Scorponok", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2512/products/10/4feb143dc2.jpg.500x500.jpg"}, {"id": "p6738", "cat": "Extreme Warfare", "toy": "DW-E56B", "title": "Giant Claw Scorponok Black Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2512/products/11/dfe8ce5b1b.jpg.500x500.jpg"}, {"id": "p7436", "cat": "Extreme Warfare", "toy": "DW-E56M", "title": "Giant Claw Scorponok Shattered Glass Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2512/products/13/55ee58b4db.jpg.500x500.jpg"}, {"id": "p5164", "cat": "Extreme Warfare", "toy": "DW-E58", "title": "Omega Supreme Rocket Giant", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2604/products/01/9928178ccb.jpg.500x500.jpg"}, {"id": "p7094", "cat": "Extreme Warfare", "toy": "DW-E58B", "title": "Rocket Giant Blue Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2604/products/01/8cce4372fa.jpg.500x500.jpg"}, {"id": "p7938", "cat": "Extreme Warfare", "toy": "DW-E58D", "title": "Rocket Giant Omega Supreme Damaged Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2606/products/22/0c311f1c81.png.500x500.png"}, {"id": "p7090", "cat": "Extreme Warfare", "toy": "DW-E59 + DW-E60", "title": "Drone & Rover", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2505/products/26/7b289aa0a8.jpg.500x500.jpg"}, {"id": "p7086", "cat": "Extreme Warfare", "toy": "DW-E59G + DW-E60G", "title": "Drone & Rover", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2505/products/23/3916667620.jpg.500x500.jpg"}, {"id": "p6193", "cat": "Extreme Warfare", "toy": "DW-E61 + DW-E62", "title": "Brutality Slugfest & Slaughter Overkill", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2505/products/29/7419e9f25d.jpg.500x500.jpg"}, {"id": "p7152", "cat": "Extreme Warfare", "toy": "DW-E61M + DW-E62M", "title": "Brutality Slugfest & Slaughter Overkill Shattered Glass Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2506/products/30/5ac3b3c1fc.jpg.500x500.jpg"}, {"id": "p7250", "cat": "Extreme Warfare", "toy": "DW-E61T + DW-E62T", "title": "Brutality Slugfest & Slaughter Overkill Transparent Version", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2508/products/18/9007709cde.jpg.500x500.jpg"}, {"id": "p6194", "cat": "Extreme Warfare", "toy": "DW-E62", "title": "Slaughter Overkill", "sub": "Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2404/products/25/fe32326b1b.jpg.500x500.jpg"}, {"id": "p7437", "cat": "Extreme Warfare", "toy": "DW-E63", "title": "Dinosaur King Grimlock", "sub": "Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2609/file/8443dba199.jpg.500x500.jpg"}, {"id": "p8137", "cat": "Extreme Warfare", "toy": "DW-E63M", "title": "Dinosaur King Grimlock Shattered Glass Version", "sub": "Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2609/photo/a85458d917.jpg.500x500.jpg"}, {"id": "p7696", "cat": "Extreme Warfare", "toy": "DW-E64 + DW-E65", "title": "Pterosaur & Triceratops", "sub": "Set of 2 · Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2603/products/18/a4b97d9496.jpg.500x500.jpg"}, {"id": "p7812", "cat": "Extreme Warfare", "toy": "DW-E66 + DW-E67", "title": "Tranystropheus & Stegosaurus", "sub": "Set of 2 · Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2604/products/27/d4af271b54.png.500x500.png"}, {"id": "p7547", "cat": "Extreme Warfare", "toy": "DW-E68 + DW-E69", "title": "Gangsters & Rambo", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2607/products/29/b01241ab71.jpg.500x500.jpg"}, {"id": "p7956", "cat": "Extreme Warfare", "toy": "DW-E70 + DW-E71", "title": "Cicada Venom & Old Iron Ironhide", "sub": "Set of 2 · Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2607/products/02/2b6c81f6cd.png.500x500.png"}, {"id": "p7948", "cat": "Extreme Warfare", "toy": "DW-E72", "title": "Sixfaced Wolf Sixshot", "sub": "Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2606/products/25/b60476d457.png.500x500.png"}, {"id": "p8080", "cat": "Extreme Warfare", "toy": "DW-E73 + DW-E76", "title": "Ambulance Ratchet & Toolbox Gears", "sub": "Set of 2 · Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2608/products/26/f31dc0b2f4.jpg.500x500.jpg"}, {"id": "p8040", "cat": "Extreme Warfare", "toy": "DW-E74 + DW-E75", "title": "Wanderer Runamuck & Pioneer Trailbreaker", "sub": "Set of 2 · Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2608/products/07/3e50e71620.jpg.500x500.jpg"}, {"id": "p8090", "cat": "Extreme Warfare", "toy": "DW-E77 + DW-E78", "title": "Flying Legs Sunstreaker & Distrace Swerve", "sub": "Set of 2 · Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2608/products/27/a0bebb3b17.jpg.500x500.jpg"}, {"id": "p8153", "cat": "Extreme Warfare", "toy": "DW-E80 + DW-E81M", "title": "Bigman & Shattered Glass Plumber", "sub": "Set of 2 · Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2609/photo/712d49157f.jpg.500x500.jpg"}, {"id": "p8154", "cat": "Extreme Warfare", "toy": "DW-E84 + DW-E86", "title": "Midland & Tow Truck", "sub": "Set of 2 · Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2609/photo/4d9a57cac8.jpg.500x500.jpg"}, {"id": "p6552", "cat": "Extreme Squadron", "toy": "DW-ES01", "title": "Flight Track Flywheels", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2603/products/15/c5452bc64c.jpg.500x500.jpg"}, {"id": "p7684", "cat": "Extreme Squadron", "toy": "DW-ES01M", "title": "Flight Track Flywheels Shattered Glass Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2603/products/14/51c102816c.jpg.500x500.jpg"}, {"id": "p7180", "cat": "Extreme Squadron", "toy": "DW-ES02", "title": "Trap Maker", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2601/products/07/429f794bce.jpg.500x500.jpg"}, {"id": "p7557", "cat": "Extreme Squadron", "toy": "DW-ES02B", "title": "Trap Maker Black Version", "sub": "", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2601/products/07/00b2453bce.jpg.500x500.jpg"}, {"id": "p6953", "cat": "Extreme Squadron", "toy": "DW-ES03 + DW-ES04", "title": "Cyber Shovelloader Scrapper & Cyber Mixer Truck Mixmaster", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2605/file/6eac5325f9.jpg.500x500.jpg"}, {"id": "p7844", "cat": "Extreme Squadron", "toy": "DW-ES03–ES08", "title": "Assembly Cyber Devastator", "sub": "Set of 6", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2605/products/11/2988cecb5b.png.500x500.png"}, {"id": "p6986", "cat": "Extreme Squadron", "toy": "DW-ES05 + DW-ES06", "title": "Cyber Crane & Cyber Dump Truck", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2605/file/68983475c5.jpg.500x500.jpg"}, {"id": "p7148", "cat": "Extreme Squadron", "toy": "DW-ES07 + DW-ES08", "title": "Cyber Excavator & Cyber Bulldozer", "sub": "Set of 2", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2605/file/dea458cce5.jpg.500x500.jpg"}, {"id": "p7340", "cat": "Extreme Squadron", "toy": "DW-ES09", "title": "V2 Prime Commander", "sub": "Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2608/file/4f32c562ba.jpg.500x500.jpg"}, {"id": "p8059", "cat": "Extreme Squadron", "toy": "DW-ES09B", "title": "V2 Prime Commander Black Version", "sub": "Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2608/products/17/3670c3ca9b.jpg.500x500.jpg"}, {"id": "p8064", "cat": "Extreme Squadron", "toy": "DW-ES09P", "title": "V2 Prime Commander Shattered Glass Version", "sub": "Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2608/products/18/1c2fa5961d.jpg.500x500.jpg"}, {"id": "p8061", "cat": "Extreme Squadron", "toy": "DW-ES09T", "title": "V2 Prime Commander Toxitron Version", "sub": "Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2608/products/17/f285cc67af.jpg.500x500.jpg"}, {"id": "p7372", "cat": "Extreme Squadron", "toy": "DW-ES10 + DW-ES11", "title": "Artillery & Airburst", "sub": "Set of 2 · Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2609/file/67ad58cd7e.jpg.500x500.jpg"}, {"id": "p8148", "cat": "Extreme Squadron", "toy": "DW-ES10B + DW-ES11B", "title": "Artillery & Airburst Japanese Version", "sub": "Set of 2 · Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2609/photo/80488d6d81.jpg.500x500.jpg"}, {"id": "p8150", "cat": "Extreme Squadron", "toy": "DW-ES12 + DW-ES13", "title": "Radar Gun & Cannon Truck Japanese Version", "sub": "Set of 2 · Pre-order", "img": "https://ueeshop.ly200-cdn.com/u_file/UPAD/UPAD468/2609/photo/2285f88796.jpg.500x500.jpg"}];
+const CATS = ['All', ...new Set(ITEMS.map(i => i.cat))];
+
+let coll = {}, user = null, queue = new Set(), timer = null;
+let cat = 'All', filter = 'all', q = '';
+const $ = id => document.getElementById(id);
+const isOwned = id => !!coll[id];
+
+function show(w){
+  for (const s of ['loading','auth']) $(s+'-screen').style.display = w===s ? 'flex' : 'none';
+  $('app-screen').style.display = w==='app' ? 'flex' : 'none';
+}
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
+
+// ── Saving: failures are shown, never silent ──
+function setItem(id, owned){ coll[id] = owned; queue.add(id); $('sync').className='sync on'; clearTimeout(timer); timer=setTimeout(flush,800); }
+async function flush(){
+  if (!user || !queue.size) return;
+  const ids=[...queue]; queue.clear();
+  try{
+    for (let i=0;i<ids.length;i+=400){
+      const b=writeBatch(db);
+      for (const id of ids.slice(i,i+400)) b.set(doc(db,'users',user.uid,COLL,id), { owned: !!coll[id], updated: serverTimestamp() });
+      await b.commit();
+    }
+    $('sync').className='sync';
+  }catch(e){
+    console.error(e); ids.forEach(id=>queue.add(id)); $('sync').className='sync err';
+    toast('⚠ Not saved to your account: '+(e.code||e.message));
+  }
+}
+window.addEventListener('beforeunload', flush);
+
+async function load(uid){
+  coll={};
+  try{
+    const snap=await getDocs(collection(db,'users',uid,COLL));
+    snap.forEach(d=>{ const x=d.data(); if (x.owned) coll[d.id]=true; });
+  }catch(e){ console.error(e); toast('⚠ Could not load your collection: '+(e.code||e.message)); }
+}
+
+// ── Full-screen zoom (tap again to close) ──
+function openZoom(src, cap){
+  const z=$('zoom'), im=z.querySelector('img');
+  im.src=src.replace(/\.\d+x\d+\.(jpg|jpeg|png)$/i,'');   // full-size picture
+  im.onerror=()=>{ im.onerror=null; im.src=src; };        // fall back to the thumbnail size
+  z.querySelector('.zcap').textContent=cap; z.classList.add('show');
+}
+$('zoom').onclick=()=>$('zoom').classList.remove('show');
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') $('zoom').classList.remove('show'); });
+
+// ── Rendering ──
+function renderCats(){
+  $('cats').innerHTML='';
+  for (const c of CATS){
+    const b=document.createElement('button'); b.className='chip'+(c===cat?' on':''); b.textContent=c;
+    b.onclick=()=>{ cat=c; renderCats(); render(); }; $('cats').appendChild(b);
+  }
+}
+function matches(i){
+  if (cat!=='All' && i.cat!==cat) return false;
+  if (filter==='owned' && !isOwned(i.id)) return false;
+  if (filter==='unowned' && isOwned(i.id)) return false;
+  if (q && !(i.title+' '+i.sub+' '+i.toy+' '+i.cat).toLowerCase().includes(q)) return false;
+  return true;
+}
+function stats(){
+  const pool=ITEMS.filter(i=>cat==='All'||i.cat===cat);
+  const own=pool.filter(i=>isOwned(i.id)).length;
+  $('stats').innerHTML=`Owned <b>${own}</b>/${pool.length}`;
+}
+function render(){
+  const g=$('grid'); g.innerHTML='';
+  const list=ITEMS.filter(matches);
+  for (const i of list){
+    const card=document.createElement('div'); card.className='card'+(isOwned(i.id)?' owned':'');
+    const w=document.createElement('div'); w.className='imgwrap';
+    const pics=[i.img,i.img2].filter(Boolean);
+    if (pics.length){
+      let k=0; const im=document.createElement('img'); im.loading='lazy'; im.alt=i.title; im.referrerPolicy='no-referrer'; im.src=pics[0];
+      im.onerror=()=>{ im.remove(); w.querySelector('.flipbadge')?.remove(); w.onclick=null; w.insertAdjacentHTML('afterbegin',`<div class="ph">No picture<br>${i.toy||''}</div>`); };
+      w.appendChild(im);
+      if (pics.length>1){
+        w.classList.add('flip'); const bd=document.createElement('span'); bd.className='flipbadge'; bd.textContent='Loose ⇄'; w.appendChild(bd);
+        w.onclick=()=>{ k=1-k; im.src=pics[k]; bd.textContent=k?'Carded ⇄':'Loose ⇄'; };
+      } else {
+        w.classList.add('zoom'); const bd=document.createElement('span'); bd.className='flipbadge'; bd.textContent='⤢ Zoom'; w.appendChild(bd);
+        w.onclick=()=>openZoom(pics[0], i.title);
+      }
+    } else w.innerHTML=`<div class="ph">No picture yet<br>${i.toy||''}</div>`;
+    card.appendChild(w);
+    card.insertAdjacentHTML('beforeend',`<div class="toy">${i.cat}${i.toy?' · '+i.toy:''}</div><div class="name"></div><div class="sub"></div>`);
+    card.querySelector('.name').textContent=i.title; card.querySelector('.sub').textContent=i.sub;
+    const t=document.createElement('div'); t.className='toggles';
+    const b=document.createElement('button'); const lab=()=>{ const o=isOwned(i.id); b.className='tg'+(o?' on':''); b.textContent=o?'✓ Owned':'Owned?'; }; lab();
+    b.onclick=()=>{ setItem(i.id,!isOwned(i.id)); lab(); card.classList.toggle('owned',isOwned(i.id)); stats(); };
+    t.appendChild(b); card.appendChild(t); g.appendChild(card);
+  }
+  if (!list.length) g.innerHTML='<div class="empty">Nothing matches.</div>';
+  stats();
+}
+
+// ── Toolbar ──
+document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ document.querySelectorAll('[data-f]').forEach(x=>x.classList.remove('on')); b.classList.add('on'); filter=b.dataset.f; render(); });
+$('search').oninput=e=>{ q=e.target.value.toLowerCase().trim(); render(); };
+$('btn-user').onclick=async()=>{ await flush(); signOut(auth); };
+
+$('btn-export').onclick=()=>{
+  const esc=s=>'"'+String(s).replace(/"/g,'""')+'"';
+  const rows=['id,category,toy,name,details,owned', ...ITEMS.map(i=>[i.id,i.cat,i.toy,i.title,i.sub].map(esc).join(',')+`,${isOwned(i.id)?1:0}`)];
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'})); a.download='drwu_collection.csv'; a.click(); toast('Exported');
+};
+$('btn-import').onclick=()=>$('csv-file').click();
+$('csv-file').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return; const r=new FileReader();
+  r.onload=ev=>{
+    const known=new Set(ITEMS.map(i=>i.id)); let n=0;
+    for (const line of ev.target.result.trim().split(/\r?\n/).slice(1)){
+      const id=(line.match(/^"((?:[^"]|"")*)"/)||[])[1]; const m=line.match(/,(\d)\s*$/);
+      if (id && m && known.has(id)){ setItem(id,m[1]==='1'); n++; }
+    }
+    render(); toast(`Imported ${n} items`); e.target.value='';
+  };
+  r.readAsText(f);
+};
+
+// ── Auth ──
+async function doLogin(){
+  const email=$('auth-email').value.trim(), pw=$('auth-password').value, btn=$('auth-btn');
+  if(!email||!pw){ $('auth-msg').textContent='Enter email and password.'; return; }
+  btn.disabled=true; btn.textContent='…';
+  try{ await signInWithEmailAndPassword(auth,email,pw); }
+  catch(e){ $('auth-msg').textContent=e.code==='auth/invalid-credential'?'Incorrect email or password.':(e.code||e.message); btn.disabled=false; btn.textContent='Login'; }
+}
+$('auth-btn').onclick=doLogin;
+document.addEventListener('keydown',e=>{ if(e.key==='Enter' && $('auth-screen').style.display==='flex') doLogin(); });
+
+onAuthStateChanged(auth, async u=>{
+  if(u){ user=u; $('btn-user').textContent='👤 '+u.email.split('@')[0]; show('loading'); await load(u.uid); renderCats(); render(); show('app'); }
+  else { user=null; coll={}; const b=$('auth-btn'); b.disabled=false; b.textContent='Login'; show('auth'); }
+});
+</script>
+</body>
+</html>
